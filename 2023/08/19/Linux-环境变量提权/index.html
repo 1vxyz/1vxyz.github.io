@@ -26,7 +26,7 @@
 <meta property="og:image" content="https://1vxyz.github.io/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/3074366-20230827011220721-406060009.png">
 <meta property="og:image" content="https://1vxyz.github.io/2023/08/19/Linux-%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F%E6%8F%90%E6%9D%83/3074366-20230827011234823-1662185281.png">
 <meta property="article:published_time" content="2023-08-19T13:28:17.000Z">
-<meta property="article:modified_time" content="2023-09-25T01:52:01.520Z">
+<meta property="article:modified_time" content="2023-09-25T01:58:04.437Z">
 <meta property="article:author" content="1vxyz">
 <meta property="article:tag" content="提权">
 <meta name="twitter:card" content="summary">
@@ -264,6 +264,8 @@
     <h2 id="环境变量介绍"><a href="#环境变量介绍" class="headerlink" title="&lt;1&gt; 环境变量介绍"></a>&lt;1&gt; 环境变量介绍</h2><p>$PATH是Linux和类Unix操作系统中的环境变量，它指定了存储所有可执行程序的 bin 和 sbin 目录。当用户在终端运行任何命令时，它向shell发出请求，在环境变量的帮助下搜索可执行文件以响应用户执行的命令。超级用户root 通常还具有&#x2F;sbin和&#x2F;usr &#x2F;sbin条目，以便轻松执行系统管理命令。</p>
 <p>使用echo命令就能查看和当前用户相关的环境变量</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="built_in">echo</span> <span class="variable">$PATH</span></span><br><span class="line">/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin</span><br></pre></td></tr></table></figure>
+
+<span id="more"></span>
 
 <h2 id="环境变量提权原理"><a href="#环境变量提权原理" class="headerlink" title="&lt;2&gt;  环境变量提权原理"></a>&lt;2&gt;  环境变量提权原理</h2><p>其原理就是利用suid的权限调用所属主用户即root用户执行c里的代码</p>
 <p>$PATH主要用于定义可执行程序的搜索目录。可执行程序包括 Linux系统命令和用户的应用程序</p>

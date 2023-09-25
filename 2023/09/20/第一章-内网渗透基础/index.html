@@ -66,7 +66,7 @@
 <meta property="og:image" content="https://1vxyz.github.io/2023/09/20/%E7%AC%AC%E4%B8%80%E7%AB%A0-%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F%E5%9F%BA%E7%A1%80/3074366-20230218143007858-438119564.png">
 <meta property="og:image" content="https://1vxyz.github.io/2023/09/20/%E7%AC%AC%E4%B8%80%E7%AB%A0-%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F%E5%9F%BA%E7%A1%80/3074366-20230218143117816-1422697493.png">
 <meta property="article:published_time" content="2023-09-20T10:17:12.000Z">
-<meta property="article:modified_time" content="2023-09-25T01:15:41.179Z">
+<meta property="article:modified_time" content="2023-09-25T07:53:46.111Z">
 <meta property="article:author" content="1vxyz">
 <meta property="article:tag" content="内网渗透">
 <meta name="twitter:card" content="summary">
@@ -636,7 +636,7 @@
 <p>虽然 SYSTEM 账户是本地计算机上的特殊账户 ,  而机器账户是域环境中的账户  , 但在某些情况下, 例如: 当本地i计算机需要访问 域资源时, SYSTEM 账户可能会充当机器账户的角色 . 这是因为在域环境中，本地计算机可以使用 SYSTEM 账户作为其身份进行域认证和访问授权。 但需要明确的是，题目两个仍然是不同的概念，SYSTEM 账户不是专门为域中的机器账户而创建的</p>
 <p>这里我们通过  incognito窃取令牌切换为 system身份演示一下</p>
 <p>de1ay为 PC主机本地用户，无法对域内进行查询</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">incognito.exe list_tokens -u   # 列出token</span><br></pre></td></tr></table></figure>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta prompt_"># </span><span class="language-bash">管理员身份运行cmd</span></span><br><span class="line">incognito.exe list_tokens -u   # 列出token</span><br></pre></td></tr></table></figure>
 
 <p><img src="/2023/09/20/%E7%AC%AC%E4%B8%80%E7%AB%A0-%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F%E5%9F%BA%E7%A1%80/image-20230925091342007.png" alt="image-20230925091342007"></p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">incognito.exe execute -c &quot;NT AUTHORITY\SYSTEM&quot; cmd.exe   # 窃取其他令牌</span><br></pre></td></tr></table></figure>
